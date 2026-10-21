@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# locally-stored uploads (customer/bike photos) - not source, not meant for git
+/public/uploads
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
