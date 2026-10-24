@@ -19,7 +19,7 @@ export default function LoginPage() {
         action={formAction}
         className="w-full max-w-sm space-y-4 border border-neutral-200 dark:border-neutral-800 rounded p-6"
       >
-        <h1 className="text-xl font-bold text-center">Lease Manager Login</h1>
+        <h1 className="text-xl font-bold text-center">Sami Electronics</h1>
 
         {state?.error && (
           <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded px-3 py-2">

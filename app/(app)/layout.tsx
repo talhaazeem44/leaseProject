@@ -2,30 +2,40 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
 
+const navLinkClass =
+  "block px-3 py-2 rounded text-sm font-medium hover:bg-neutral-800";
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <nav className="bg-neutral-900 text-white px-6 py-3 flex items-center gap-6 print:hidden">
-        <span className="font-bold">Lease Manager</span>
-        <Link href="/dashboard" className="text-sm hover:underline">
-          Dashboard
-        </Link>
-        <Link href="/leases" className="text-sm hover:underline">
-          Leases
-        </Link>
-        <Link href="/reminders" className="text-sm hover:underline">
-          Reminders
-        </Link>
-        <Link href="/settings/markup-rates" className="text-sm hover:underline">
-          Markup Rates
-        </Link>
-        <form action={logout} className="ml-auto">
-          <button type="submit" className="text-sm hover:underline cursor-pointer">
+    <div className="flex flex-1 min-h-screen print:block print:min-h-0">
+      <aside className="w-56 shrink-0 bg-neutral-900 text-white flex flex-col print:hidden">
+        <div className="px-4 py-4 border-b border-neutral-800">
+          <span className="font-bold text-lg">Sami Electronics</span>
+        </div>
+        <nav className="flex-1 flex flex-col gap-1 p-3">
+          <Link href="/dashboard" className={navLinkClass}>
+            Dashboard
+          </Link>
+          <Link href="/leases" className={navLinkClass}>
+            Leases
+          </Link>
+          <Link href="/reminders" className={navLinkClass}>
+            Reminders
+          </Link>
+          <Link href="/settings/markup-rates" className={navLinkClass}>
+            Markup Rates
+          </Link>
+        </nav>
+        <form action={logout} className="p-3 border-t border-neutral-800">
+          <button
+            type="submit"
+            className="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-neutral-800 cursor-pointer"
+          >
             Logout
           </button>
         </form>
-      </nav>
-      <div className="flex-1">{children}</div>
-    </>
+      </aside>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
   );
 }
