@@ -18,7 +18,7 @@ export function StatTile({
   hint?: string;
 }) {
   return (
-    <div className="border border-neutral-200 rounded p-4 bg-white">
+    <div className="border border-gold rounded p-4 bg-white">
       <div className="text-xs font-medium text-neutral-500">{label}</div>
       <div className={`text-2xl font-semibold mt-1 ${toneClass[tone]}`}>{value}</div>
       {hint && <div className="text-xs text-neutral-400 mt-1">{hint}</div>}

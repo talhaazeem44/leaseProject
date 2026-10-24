@@ -10,7 +10,7 @@ export default function NewLeasePage() {
         <h1 className="text-xl font-bold">New Lease</h1>
         <Link
           href="/leases/print-blank"
-          className="border border-neutral-300 dark:border-neutral-700 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          className="border border-gold text-sm font-medium px-4 py-2 rounded hover:bg-offwhite-dim"
         >
           Print Blank Form
         </Link>

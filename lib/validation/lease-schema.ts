@@ -14,6 +14,7 @@ export const bikeSchema = z.object({
   purchaseDate: dateStringSchema,
   accountNo: z.string().min(1, "Required"),
   retailPrice: z.coerce.number().positive("Must be greater than 0"),
+  costPrice: z.coerce.number().nonnegative(),
 });
 
 export const customerSchema = z.object({
@@ -63,7 +64,6 @@ export const creditPlanInputSchema = z.object({
   registrationFee: z.coerce.number().nonnegative().default(0),
   documentCharges: z.coerce.number().nonnegative().default(0),
   retailPrice: z.coerce.number().positive("Must be greater than 0"),
-  rentCreditPrice: z.coerce.number().positive("Must be greater than 0"),
   advance: z.coerce.number().nonnegative(),
 });
 
@@ -83,4 +83,10 @@ export const paymentFormSchema = z.object({
   latePaymentCharges: z.coerce.number().nonnegative().optional().default(0),
   paymentDetails: z.string().optional().default(""),
   chequeNo: z.string().optional().default(""),
+});
+
+export const leaseExpenseFormSchema = z.object({
+  description: z.string().min(1, "Required"),
+  amount: z.coerce.number().positive("Must be greater than 0"),
+  date: dateStringSchema,
 });

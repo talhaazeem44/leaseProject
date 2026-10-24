@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { ObjectId } from "mongodb";
 import { getLeasesCollection } from "@/lib/db/collections";
-import { computeTotals } from "@/lib/lease-calculations";
+import { computeTotals, computeExpensesTotal, computeLeaseProfit } from "@/lib/lease-calculations";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SectionHeader, InfoGrid, InfoField, Table, THead, Th, Td } from "@/components/Table";
 import { PaymentRow } from "./PaymentRow";
+import { addLeaseExpense, deleteLeaseExpense } from "../actions";
+
+const expenseInputClass = "border border-gold bg-white rounded px-1.5 py-1 text-xs";
 
 export default function LeasePage({ params }: PageProps<"/leases/[id]">) {
   return (
@@ -33,8 +36,17 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
   if (!lease) notFound();
 
   const { bike, customer, guarantors, creditPlan, installments } = lease;
+  const expenses = lease.expenses ?? [];
+  const costPrice = bike.costPrice ?? 0;
   const totals = computeTotals(installments);
+  const expensesTotal = computeExpensesTotal(expenses);
+  const profit = computeLeaseProfit({
+    rentCreditPrice: creditPlan.rentCreditPrice,
+    costPrice,
+    expensesTotal,
+  });
   const leaseId = lease._id!.toString();
+  const addExpenseAction = addLeaseExpense.bind(null, leaseId);
 
   return (
     <div className="space-y-4">
@@ -42,7 +54,33 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
         Lease — {customer.name} ({bike.model})
       </h1>
 
-      <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+      <div className="border border-gold rounded overflow-hidden">
+        <SectionHeader>Profit Summary</SectionHeader>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-offwhite-dim">
+          <div>
+            <div className="text-xs text-neutral-500">Revenue (Rent/Credit Price)</div>
+            <div className="font-semibold">Rs. {formatCurrency(creditPlan.rentCreditPrice)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500">Cost Price</div>
+            <div className="font-semibold">Rs. {formatCurrency(costPrice)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500">Expenses</div>
+            <div className="font-semibold">Rs. {formatCurrency(expensesTotal)}</div>
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500">Net Profit</div>
+            <div
+              className={`text-xl font-bold ${profit >= 0 ? "text-emerald-700" : "text-red-600"}`}
+            >
+              Rs. {formatCurrency(profit)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Motorcycle Information</SectionHeader>
         <InfoGrid>
           <InfoField label="Chassis #" value={bike.chassisNo} />
@@ -52,10 +90,11 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
           <InfoField label="Color" value={bike.color} />
           <InfoField label="Account No" value={bike.accountNo} />
           <InfoField label="Retail Price" value={`Rs. ${formatCurrency(bike.retailPrice)}`} />
+          <InfoField label="Cost Price" value={`Rs. ${formatCurrency(costPrice)}`} />
         </InfoGrid>
       </div>
 
-      <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+      <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Customer Information</SectionHeader>
         <div className="flex flex-col-reverse sm:flex-row gap-4">
         <div className="flex-1">
@@ -92,11 +131,11 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
               alt={`Photo of ${customer.name}`}
               width={128}
               height={128}
-              className="w-32 h-32 object-cover border border-neutral-300 dark:border-neutral-700 rounded"
+              className="w-32 h-32 object-cover border border-gold rounded"
               unoptimized
             />
           ) : (
-            <div className="w-32 h-32 flex items-center justify-center border-2 border-dashed border-neutral-400 dark:border-neutral-600 rounded text-center text-xs text-neutral-500 italic">
+            <div className="w-32 h-32 flex items-center justify-center border-2 border-dashed border-gold/50 rounded text-center text-xs text-neutral-500 italic">
               Insert Photo Here
             </div>
           )}
@@ -110,7 +149,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
           return (
             <div
               key={idx}
-              className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden"
+              className="border border-gold rounded overflow-hidden"
             >
               <SectionHeader>Guarantor {idx + 1}</SectionHeader>
               {g ? (
@@ -135,7 +174,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
         })}
       </div>
 
-      <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+      <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Credit Plan</SectionHeader>
         <InfoGrid>
           <InfoField label="File Ref No" value={creditPlan.fileRefNo} />
@@ -164,7 +203,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
         </InfoGrid>
       </div>
 
-      <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+      <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Installment Schedule</SectionHeader>
         <Table>
           <THead>
@@ -184,11 +223,80 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
             {installments.map((inst) => (
               <PaymentRow key={inst.sr} leaseId={leaseId} installment={inst} />
             ))}
-            <tr className="bg-neutral-100 dark:bg-neutral-800 font-semibold">
+            <tr className="bg-offwhite-dim font-semibold">
               <Td colSpan={4}>Total</Td>
               <Td>Rs. {formatCurrency(totals.totalReceived)}</Td>
               <Td>{formatCurrency(totals.totalShortOver)}</Td>
               <Td colSpan={5} />
+            </tr>
+          </tbody>
+        </Table>
+      </div>
+
+      <div className="border border-gold rounded overflow-hidden">
+        <SectionHeader>Expenses</SectionHeader>
+        <Table>
+          <THead>
+            <Th>Date</Th>
+            <Th>Description</Th>
+            <Th>Amount</Th>
+            <Th>Action</Th>
+          </THead>
+          <tbody>
+            {expenses.map((expense) => {
+              const deleteAction = deleteLeaseExpense.bind(null, leaseId, expense.id);
+              return (
+                <tr key={expense.id}>
+                  <Td>{formatDate(expense.date)}</Td>
+                  <Td>{expense.description}</Td>
+                  <Td>Rs. {formatCurrency(expense.amount)}</Td>
+                  <Td>
+                    <form action={deleteAction}>
+                      <button
+                        type="submit"
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </Td>
+                </tr>
+              );
+            })}
+            {expenses.length > 0 && (
+              <tr className="bg-offwhite-dim font-semibold">
+                <Td colSpan={2}>Total Expenses</Td>
+                <Td>Rs. {formatCurrency(expensesTotal)}</Td>
+                <Td />
+              </tr>
+            )}
+            <tr className="bg-offwhite-dim">
+              <Td colSpan={4}>
+                <form action={addExpenseAction} className="flex items-center gap-2 flex-wrap">
+                  <input type="date" name="date" required className={expenseInputClass} />
+                  <input
+                    type="text"
+                    name="description"
+                    placeholder="Description"
+                    required
+                    className={expenseInputClass}
+                  />
+                  <input
+                    type="number"
+                    name="amount"
+                    step="0.01"
+                    placeholder="Amount"
+                    required
+                    className={`${expenseInputClass} w-28`}
+                  />
+                  <button
+                    type="submit"
+                    className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
+                  >
+                    + Add Expense
+                  </button>
+                </form>
+              </Td>
             </tr>
           </tbody>
         </Table>

@@ -5,11 +5,16 @@ import { refresh } from "next/cache";
 import { ObjectId } from "mongodb";
 import { getLeasesCollection, getMarkupRatesCollection } from "@/lib/db/collections";
 import { formDataToNestedObject } from "@/lib/validation/form-data";
-import { leaseFormSchema, paymentFormSchema } from "@/lib/validation/lease-schema";
+import {
+  leaseFormSchema,
+  paymentFormSchema,
+  leaseExpenseFormSchema,
+} from "@/lib/validation/lease-schema";
 import { saveCustomerPhoto } from "@/lib/upload";
 import {
   computeCreditAmount,
   computeProfitAmount,
+  computeRentCreditPrice,
   generateInstallmentSchedule,
   getMarkupRate,
   applyPayment,
@@ -39,6 +44,7 @@ export async function createLease(formData: FormData): Promise<void> {
     parsed.creditPlan.advance
   );
   const profitAmount = computeProfitAmount(creditAmount, ratePercent);
+  const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
   const installments = generateInstallmentSchedule({
     startingMonth: parsed.creditPlan.startingMonth,
     numberOfInstallments: parsed.creditPlan.numberOfInstallments,
@@ -63,13 +69,14 @@ export async function createLease(formData: FormData): Promise<void> {
       registrationFee: parsed.creditPlan.registrationFee,
       documentCharges: parsed.creditPlan.documentCharges,
       retailPrice: parsed.creditPlan.retailPrice,
-      rentCreditPrice: parsed.creditPlan.rentCreditPrice,
+      rentCreditPrice,
       advance: parsed.creditPlan.advance,
       rentProfitRatePercent: ratePercent,
       rentProfitAmount: profitAmount,
       creditAmount,
     },
     installments,
+    expenses: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -111,6 +118,38 @@ export async function recordPayment(
   await collection.updateOne(
     { _id: new ObjectId(leaseId) },
     { $set: { installments: updatedInstallments, updatedAt: new Date() } }
+  );
+
+  refresh();
+}
+
+export async function addLeaseExpense(leaseId: string, formData: FormData): Promise<void> {
+  const parsed = leaseExpenseFormSchema.parse(Object.fromEntries(formData.entries()));
+
+  const collection = await getLeasesCollection();
+  await collection.updateOne(
+    { _id: new ObjectId(leaseId) },
+    {
+      $push: {
+        expenses: {
+          id: crypto.randomUUID(),
+          description: parsed.description,
+          amount: parsed.amount,
+          date: parsed.date,
+        },
+      },
+      $set: { updatedAt: new Date() },
+    }
+  );
+
+  refresh();
+}
+
+export async function deleteLeaseExpense(leaseId: string, expenseId: string): Promise<void> {
+  const collection = await getLeasesCollection();
+  await collection.updateOne(
+    { _id: new ObjectId(leaseId) },
+    { $pull: { expenses: { id: expenseId } }, $set: { updatedAt: new Date() } }
   );
 
   refresh();

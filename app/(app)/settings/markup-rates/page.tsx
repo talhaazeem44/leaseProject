@@ -3,8 +3,7 @@ import { getMarkupRatesCollection } from "@/lib/db/collections";
 import { Table, THead, Th, Td } from "@/components/Table";
 import { createMarkupRate, updateMarkupRate, deleteMarkupRate } from "./actions";
 
-const inputClass =
-  "w-24 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded px-2 py-1 text-sm";
+const inputClass = "w-24 border border-gold bg-white rounded px-2 py-1 text-sm";
 
 export default function MarkupRatesPage() {
   return (
@@ -29,7 +28,7 @@ async function RatesTable() {
   const rates = await collection.find().sort({ tenureMonths: 1 }).toArray();
 
   return (
-    <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+    <div className="border border-gold rounded overflow-hidden">
       <Table>
         <THead>
           <Th>Tenure (months)</Th>
@@ -70,7 +69,7 @@ async function RatesTable() {
                     />
                     <button
                       type="submit"
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1 rounded"
+                      className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
                     >
                       Save
                     </button>
@@ -89,7 +88,7 @@ async function RatesTable() {
               </tr>
             );
           })}
-          <tr className="bg-neutral-50 dark:bg-neutral-900">
+          <tr className="bg-offwhite-dim">
             <Td colSpan={4}>
               <form action={createMarkupRate} className="flex items-center gap-2">
                 <input
@@ -115,7 +114,7 @@ async function RatesTable() {
                 />
                 <button
                   type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1 rounded"
+                  className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
                 >
                   + Add Rate
                 </button>

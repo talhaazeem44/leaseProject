@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getLeasesCollection } from "@/lib/db/collections";
-import { computeTotals, classifyInstallment } from "@/lib/lease-calculations";
+import { getLeasesCollection, getExpensesCollection } from "@/lib/db/collections";
+import {
+  computeTotals,
+  classifyInstallment,
+  computeExpensesTotal,
+  computeLeaseProfit,
+} from "@/lib/lease-calculations";
 import { formatCompactCurrency, formatDate } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { Table, THead, Th, Td } from "@/components/Table";
@@ -20,6 +25,9 @@ export default function DashboardPage() {
 async function DashboardContent() {
   const collection = await getLeasesCollection();
   const leases = await collection.find().sort({ createdAt: -1 }).toArray();
+  const expensesCollection = await getExpensesCollection();
+  const generalExpenses = await expensesCollection.find().toArray();
+  const generalExpensesTotal = computeExpensesTotal(generalExpenses);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -32,6 +40,7 @@ async function DashboardContent() {
   let totalReceived = 0;
   let overdueCount = 0;
   let upcomingCount = 0;
+  let totalBikeProfit = 0;
   const modelCounts = new Map<string, number>();
 
   for (const lease of leases) {
@@ -44,6 +53,12 @@ async function DashboardContent() {
     totalFinanced += lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount;
     totalReceived += computeTotals(lease.installments).totalReceived;
 
+    totalBikeProfit += computeLeaseProfit({
+      rentCreditPrice: lease.creditPlan.rentCreditPrice,
+      costPrice: lease.bike.costPrice ?? 0,
+      expensesTotal: computeExpensesTotal(lease.expenses ?? []),
+    });
+
     for (const inst of lease.installments) {
       const bucket = classifyInstallment(inst.installmentDate, inst.receivedAmount, today);
       if (bucket === "overdue") overdueCount++;
@@ -52,6 +67,8 @@ async function DashboardContent() {
 
     modelCounts.set(lease.bike.model, (modelCounts.get(lease.bike.model) ?? 0) + 1);
   }
+
+  const netProfit = totalBikeProfit - generalExpensesTotal;
 
   const topModels = [...modelCounts.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -79,11 +96,25 @@ async function DashboardContent() {
           value={String(upcomingCount)}
           tone={upcomingCount > 0 ? "warning" : "default"}
         />
+        <StatTile
+          label="Total profit (bikes)"
+          value={`Rs. ${formatCompactCurrency(totalBikeProfit)}`}
+          tone={totalBikeProfit < 0 ? "critical" : "default"}
+        />
+        <StatTile
+          label="Business expenses"
+          value={`Rs. ${formatCompactCurrency(generalExpensesTotal)}`}
+        />
+        <StatTile
+          label="Net profit"
+          value={`Rs. ${formatCompactCurrency(netProfit)}`}
+          tone={netProfit < 0 ? "critical" : "default"}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border border-neutral-200 rounded overflow-hidden">
-          <div className="bg-neutral-800 text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide">
+        <div className="border border-gold rounded overflow-hidden">
+          <div className="bg-sidebar text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide border-b-2 border-gold">
             Recent Applications
           </div>
           {recentLeases.length === 0 ? (
@@ -119,7 +150,7 @@ async function DashboardContent() {
                       <Td>
                         <Link
                           href={`/leases/${lease._id!.toString()}`}
-                          className="text-blue-600 hover:underline"
+                          className="text-gold-dark hover:underline"
                         >
                           View
                         </Link>
@@ -132,8 +163,8 @@ async function DashboardContent() {
           )}
         </div>
 
-        <div className="border border-neutral-200 rounded overflow-hidden">
-          <div className="bg-neutral-800 text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide">
+        <div className="border border-gold rounded overflow-hidden">
+          <div className="bg-sidebar text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide border-b-2 border-gold">
             Leases by Bike Model
           </div>
           {topModels.length === 0 ? (
@@ -143,9 +174,9 @@ async function DashboardContent() {
               {topModels.map(([model, count]) => (
                 <div key={model} className="flex items-center gap-3 text-sm">
                   <span className="w-24 shrink-0 truncate text-neutral-700">{model}</span>
-                  <div className="flex-1 bg-neutral-100 rounded h-5 relative overflow-hidden">
+                  <div className="flex-1 bg-offwhite-dim rounded h-5 relative overflow-hidden">
                     <div
-                      className="bg-blue-600 h-full rounded"
+                      className="bg-gold h-full rounded"
                       style={{ width: `${(count / maxModelCount) * 100}%` }}
                     />
                   </div>

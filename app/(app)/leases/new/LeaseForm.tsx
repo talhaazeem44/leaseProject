@@ -6,6 +6,8 @@ import {
   computeCreditAmount,
   computeProfitAmount,
   computeMonthlyInstallmentBase,
+  computeRentCreditPrice,
+  computeLeaseProfit,
   getMarkupRate,
 } from "@/lib/lease-calculations";
 import { formatCurrency } from "@/lib/format";
@@ -16,9 +18,8 @@ interface RateOption {
   ratePercent: number;
 }
 
-const inputClass =
-  "w-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded px-2 py-1.5 text-sm";
-const labelClass = "block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1";
+const inputClass = "w-full border border-gold bg-white rounded px-2 py-1.5 text-sm";
+const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
 
 function Field({
   label,
@@ -87,7 +88,7 @@ function PhotoUploadField() {
   return (
     <div>
       <label className={labelClass}>Customer Photo</label>
-      <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-neutral-400 dark:border-neutral-600 rounded cursor-pointer overflow-hidden text-center text-xs text-neutral-500 hover:border-neutral-600 dark:hover:border-neutral-400">
+      <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gold/50 rounded cursor-pointer overflow-hidden text-center text-xs text-neutral-500 hover:border-gold">
         {previewUrl ? (
           <Image
             src={previewUrl}
@@ -117,8 +118,8 @@ function PhotoUploadField() {
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="border border-neutral-200 dark:border-neutral-800 rounded">
-      <legend className="bg-neutral-800 text-white text-sm font-semibold uppercase tracking-wide px-4 py-2 w-full">
+    <fieldset className="border border-gold rounded">
+      <legend className="bg-sidebar text-white text-sm font-semibold uppercase tracking-wide px-4 py-2 w-full border-b-2 border-gold">
         {title}
       </legend>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">{children}</div>
@@ -128,6 +129,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export function LeaseForm({ rates }: { rates: RateOption[] }) {
   const [retailPrice, setRetailPrice] = useState<number>(0);
+  const [costPrice, setCostPrice] = useState<number>(0);
   const [advance, setAdvance] = useState<number>(0);
   const [tenureMonths, setTenureMonths] = useState<number>(rates[0]?.tenureMonths ?? 0);
 
@@ -142,11 +144,20 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
         profitAmount,
         tenureMonths
       );
-      return { ratePercent, creditAmount, profitAmount, monthlyInstallment };
+      const rentCreditPrice = computeRentCreditPrice(retailPrice, profitAmount);
+      const profit = computeLeaseProfit({ rentCreditPrice, costPrice, expensesTotal: 0 });
+      return {
+        ratePercent,
+        creditAmount,
+        profitAmount,
+        monthlyInstallment,
+        rentCreditPrice,
+        profit,
+      };
     } catch {
       return null;
     }
-  }, [rates, tenureMonths, retailPrice, advance]);
+  }, [rates, tenureMonths, retailPrice, advance, costPrice]);
 
   return (
     <form action={createLease} className="space-y-6">
@@ -164,6 +175,23 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
           required
           defaultValue={0}
         />
+        <div>
+          <label className={labelClass}>
+            Cost Price (Rs.) <span className="text-red-500">*</span>
+          </label>
+          <input
+            name="bike.costPrice"
+            type="number"
+            required
+            className={inputClass}
+            value={costPrice || ""}
+            onChange={(e) => setCostPrice(Number(e.target.value))}
+          />
+          <p className="text-xs text-neutral-500 mt-1">
+            What you paid to acquire this bike &mdash; used to calculate profit, not shown on
+            customer paperwork.
+          </p>
+        </div>
       </SectionCard>
 
       <SectionCard title="Customer Information">
@@ -263,8 +291,8 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
         <Field label="Business Contact #" name="guarantor2.businessContactNo" />
       </SectionCard>
 
-      <fieldset className="border border-neutral-200 dark:border-neutral-800 rounded">
-        <legend className="bg-neutral-800 text-white text-sm font-semibold uppercase tracking-wide px-4 py-2 w-full">
+      <fieldset className="border border-gold rounded">
+        <legend className="bg-sidebar text-white text-sm font-semibold uppercase tracking-wide px-4 py-2 w-full border-b-2 border-gold">
           Credit Plan
         </legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -303,12 +331,6 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
               onChange={(e) => setRetailPrice(Number(e.target.value))}
             />
           </div>
-          <Field
-            label="Rent / Credit Price (Rs.)"
-            name="creditPlan.rentCreditPrice"
-            type="number"
-            required
-          />
           <div>
             <label className={labelClass}>Advance (Rs.)</label>
             <input
@@ -322,7 +344,7 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
         </div>
 
         {preview && (
-          <div className="mx-4 mb-4 p-3 bg-neutral-50 dark:bg-neutral-900 border border-dashed border-neutral-300 dark:border-neutral-700 rounded text-sm grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="mx-4 mb-4 p-3 bg-offwhite-dim border border-dashed border-gold/50 rounded text-sm grid grid-cols-2 sm:grid-cols-6 gap-3">
             <div>
               <div className="text-xs text-neutral-500">Credit Amount</div>
               <div className="font-semibold">Rs. {formatCurrency(preview.creditAmount)}</div>
@@ -336,8 +358,20 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
               <div className="font-semibold">Rs. {formatCurrency(preview.profitAmount)}</div>
             </div>
             <div>
+              <div className="text-xs text-neutral-500">Rent/Credit Price</div>
+              <div className="font-semibold">Rs. {formatCurrency(preview.rentCreditPrice)}</div>
+            </div>
+            <div>
               <div className="text-xs text-neutral-500">Monthly Installment</div>
               <div className="font-semibold">Rs. {formatCurrency(preview.monthlyInstallment)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500">Estimated Profit</div>
+              <div
+                className={`font-bold ${preview.profit >= 0 ? "text-emerald-700" : "text-red-600"}`}
+              >
+                Rs. {formatCurrency(preview.profit)}
+              </div>
             </div>
           </div>
         )}
@@ -345,7 +379,7 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
 
       <button
         type="submit"
-        className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded"
+        className="bg-gold hover:bg-gold-dark text-white font-medium px-6 py-2 rounded"
       >
         Create Lease
       </button>

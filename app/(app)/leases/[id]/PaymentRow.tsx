@@ -7,8 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { recordPayment } from "../actions";
 import type { Installment } from "@/lib/models/lease";
 
-const inputClass =
-  "w-28 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded px-1.5 py-1 text-xs";
+const inputClass = "w-28 border border-gold bg-white rounded px-1.5 py-1 text-xs";
 
 function reminderStatus(installmentDate: Date, receivedAmount: number | null) {
   if (receivedAmount !== null) return "paid" as const;
@@ -130,7 +129,7 @@ export function PaymentRow({
           type="submit"
           form={formId}
           disabled={isPending}
-          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1 rounded"
+          className="bg-gold hover:bg-gold-dark disabled:opacity-50 text-white text-xs font-medium px-3 py-1 rounded"
         >
           {isPending ? "Saving…" : "+ Save"}
         </button>

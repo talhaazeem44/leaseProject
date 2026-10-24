@@ -5,7 +5,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
+  --background: #faf7f0;
   --foreground: #171717;
 }
 
@@ -14,6 +14,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand palette: grey sidebar, gold accents/borders, off-white surfaces */
+  --color-offwhite: #faf7f0;
+  --color-offwhite-dim: #f1ebdc;
+  --color-gold: #b8860b;
+  --color-gold-dark: #8a6508;
+  --color-gold-light: #d4af37;
+  --color-sidebar: #3a3a36;
+  --color-sidebar-hover: #4e4d47;
 }
 
 body {

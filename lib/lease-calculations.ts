@@ -24,6 +24,11 @@ export function computeProfitAmount(creditAmount: number, ratePercent: number): 
   return round2((creditAmount * ratePercent) / 100);
 }
 
+/** Total price under the credit/installment scheme: retail price plus the markup. */
+export function computeRentCreditPrice(retailPrice: number, profitAmount: number): number {
+  return round2(retailPrice + profitAmount);
+}
+
 export function computeMonthlyInstallmentBase(
   creditAmount: number,
   profitAmount: number,
@@ -138,6 +143,23 @@ export function computeTotals(installments: Installment[]) {
   const totalReceived = installments.reduce((s, i) => s + (i.receivedAmount ?? 0), 0);
   const totalShortOver = installments.reduce((s, i) => s + (i.shortOver ?? 0), 0);
   return { totalReceived: round2(totalReceived), totalShortOver: round2(totalShortOver) };
+}
+
+export function computeExpensesTotal(expenses: { amount: number }[]): number {
+  return round2(expenses.reduce((sum, e) => sum + e.amount, 0));
+}
+
+/**
+ * Profit on a single bike/lease: what the customer ultimately pays (retail
+ * price plus the financing markup) minus what the bike cost to acquire and
+ * any expenses recorded against this specific lease.
+ */
+export function computeLeaseProfit(params: {
+  rentCreditPrice: number;
+  costPrice: number;
+  expensesTotal: number;
+}): number {
+  return round2(params.rentCreditPrice - params.costPrice - params.expensesTotal);
 }
 
 export type ReminderBucket = "overdue" | "upcoming";

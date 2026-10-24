@@ -8,6 +8,7 @@ export interface Bike {
   purchaseDate: Date;
   accountNo: string;
   retailPrice: number;
+  costPrice: number;
 }
 
 export interface Customer {
@@ -75,6 +76,13 @@ export interface CreditPlan {
   creditAmount: number;
 }
 
+export interface LeaseExpense {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+}
+
 export interface Lease {
   _id?: ObjectId;
   bike: Bike;
@@ -82,6 +90,7 @@ export interface Lease {
   guarantors: Guarantor[];
   creditPlan: CreditPlan;
   installments: Installment[];
+  expenses: LeaseExpense[];
   createdAt: Date;
   updatedAt: Date;
 }

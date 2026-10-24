@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function SectionHeader({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-neutral-800 text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide">
+    <div className="bg-sidebar text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide border-b-2 border-gold">
       {children}
     </div>
   );
@@ -10,7 +10,7 @@ export function SectionHeader({ children }: { children: ReactNode }) {
 
 export function InfoGrid({ children }: { children: ReactNode }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 px-4 py-3 bg-neutral-50 dark:bg-neutral-900">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 px-4 py-3 bg-offwhite-dim">
       {children}
     </div>
   );
@@ -19,10 +19,8 @@ export function InfoGrid({ children }: { children: ReactNode }) {
 export function InfoField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex gap-2 text-sm">
-      <span className="font-medium min-w-[9rem] text-neutral-600 dark:text-neutral-400">
-        {label}
-      </span>
-      <span className="text-neutral-900 dark:text-neutral-100">:&nbsp;{value ?? "—"}</span>
+      <span className="font-medium min-w-[9rem] text-neutral-600">{label}</span>
+      <span className="text-neutral-900">:&nbsp;{value ?? "—"}</span>
     </div>
   );
 }
@@ -37,7 +35,7 @@ export function Table({ children }: { children: ReactNode }) {
 
 export function THead({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-neutral-800 text-white">
+    <thead className="bg-sidebar text-white">
       <tr>{children}</tr>
     </thead>
   );
@@ -63,7 +61,7 @@ export function Td({
   return (
     <td
       colSpan={colSpan}
-      className={`px-3 py-2 border-b border-neutral-200 dark:border-neutral-800 whitespace-nowrap ${className}`}
+      className={`px-3 py-2 border-b border-gold/30 whitespace-nowrap ${className}`}
     >
       {children}
     </td>

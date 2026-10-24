@@ -13,13 +13,13 @@ export default function LeasesPage({ searchParams }: PageProps<"/leases">) {
         <div className="flex items-center gap-2">
           <Link
             href="/leases/print-blank"
-            className="border border-neutral-300 dark:border-neutral-700 text-sm font-medium px-4 py-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="border border-gold text-sm font-medium px-4 py-2 rounded hover:bg-offwhite-dim"
           >
             Print Blank Form
           </Link>
           <Link
             href="/leases/new"
-            className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded"
+            className="bg-gold hover:bg-gold-dark text-white text-sm font-medium px-4 py-2 rounded"
           >
             + New Lease
           </Link>
@@ -49,11 +49,11 @@ async function LeasesContent({ searchParams }: Pick<PageProps<"/leases">, "searc
           name="q"
           defaultValue={query}
           placeholder="Search by customer mobile number…"
-          className="flex-1 max-w-sm border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded px-3 py-1.5 text-sm"
+          className="flex-1 max-w-sm border border-gold bg-white rounded px-3 py-1.5 text-sm"
         />
         <button
           type="submit"
-          className="bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium px-4 py-1.5 rounded"
+          className="bg-sidebar hover:bg-sidebar-hover text-white text-sm font-medium px-4 py-1.5 rounded"
         >
           Search
         </button>
@@ -71,7 +71,7 @@ async function LeasesContent({ searchParams }: Pick<PageProps<"/leases">, "searc
             : "No leases yet. Create your first one."}
         </p>
       ) : (
-        <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
+        <div className="border border-gold rounded overflow-hidden">
           <Table>
             <THead>
               <Th>File Ref</Th>
@@ -102,7 +102,7 @@ async function LeasesContent({ searchParams }: Pick<PageProps<"/leases">, "searc
                     <Td>
                       <Link
                         href={`/leases/${lease._id!.toString()}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-gold-dark hover:underline"
                       >
                         View
                       </Link>

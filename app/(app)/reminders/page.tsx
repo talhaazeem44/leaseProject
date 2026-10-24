@@ -74,8 +74,8 @@ function ReminderSection({
   rows: ReminderRow[];
 }) {
   return (
-    <div className="border border-neutral-200 dark:border-neutral-800 rounded overflow-hidden">
-      <div className="bg-neutral-800 text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide flex items-center justify-between">
+    <div className="border border-gold rounded overflow-hidden">
+      <div className="bg-sidebar text-white px-4 py-2 font-semibold text-sm uppercase tracking-wide border-b-2 border-gold flex items-center justify-between">
         <span>{title}</span>
         <StatusBadge status={status} />
       </div>
@@ -104,7 +104,7 @@ function ReminderSection({
                 <Td>
                   <Link
                     href={`/leases/${r.leaseId}`}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-gold-dark hover:underline"
                   >
                     View Lease
                   </Link>
