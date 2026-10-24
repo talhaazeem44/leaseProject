@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { Td } from "@/components/Table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -77,7 +78,16 @@ export function PaymentRow({
       <Td colSpan={5}>
         <form
           id={formId}
-          action={(formData) => startTransition(() => boundAction(formData))}
+          action={(formData) =>
+            startTransition(async () => {
+              try {
+                await boundAction(formData);
+                toast.success("Payment recorded");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Something went wrong");
+              }
+            })
+          }
           className="flex flex-wrap items-center gap-1"
         >
           <input

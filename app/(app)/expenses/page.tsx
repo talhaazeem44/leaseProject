@@ -1,8 +1,10 @@
 import { Suspense } from "react";
-import { getExpensesCollection } from "@/lib/db/collections";
-import { computeExpensesTotal } from "@/lib/lease-calculations";
+import { getExpensesCollection, getLeasesCollection } from "@/lib/db/collections";
+import { computeExpensesTotal, computeTotals, computeCashInHand } from "@/lib/lease-calculations";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
-import { Table, THead, Th, Td } from "@/components/Table";
+import { Table, THead, Th, Td, SectionHeader } from "@/components/Table";
+import { ActionForm } from "@/components/ActionForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createExpense, deleteExpense } from "./actions";
 
 const inputClass = "border border-gold bg-white rounded px-2 py-1 text-sm";
@@ -18,8 +20,71 @@ export default function ExpensesPage() {
         </p>
       </div>
       <Suspense fallback={<p className="text-sm text-neutral-500">Loading expenses…</p>}>
+        <CashInHandSummary />
+      </Suspense>
+      <Suspense fallback={<p className="text-sm text-neutral-500">Loading expenses…</p>}>
         <ExpensesTable />
       </Suspense>
+    </div>
+  );
+}
+
+async function CashInHandSummary() {
+  const [expensesCollection, leasesCollection] = await Promise.all([
+    getExpensesCollection(),
+    getLeasesCollection(),
+  ]);
+  const [generalExpenses, leases] = await Promise.all([
+    expensesCollection.find().toArray(),
+    leasesCollection.find().toArray(),
+  ]);
+
+  const generalExpensesTotal = computeExpensesTotal(generalExpenses);
+  let totalReceived = 0;
+  let totalCostPrice = 0;
+  let totalLeaseExpenses = 0;
+  for (const lease of leases) {
+    totalReceived += computeTotals(lease.installments).totalReceived;
+    totalCostPrice += lease.bike.costPrice ?? 0;
+    totalLeaseExpenses += computeExpensesTotal(lease.expenses ?? []);
+  }
+
+  const cashInHand = computeCashInHand({
+    totalReceived,
+    totalCostPrice,
+    totalLeaseExpenses,
+    totalGeneralExpenses: generalExpensesTotal,
+  });
+
+  return (
+    <div className="border border-gold rounded overflow-hidden">
+      <SectionHeader>Cash in Hand</SectionHeader>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-4 bg-offwhite-dim">
+        <div>
+          <div className="text-xs text-neutral-500">Received from Customers</div>
+          <div className="font-semibold">Rs. {formatCurrency(totalReceived)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">Spent on Bikes</div>
+          <div className="font-semibold">Rs. {formatCurrency(totalCostPrice)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">Lease Expenses</div>
+          <div className="font-semibold">Rs. {formatCurrency(totalLeaseExpenses)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">Business Expenses</div>
+          <div className="font-semibold">Rs. {formatCurrency(generalExpensesTotal)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">Cash in Hand</div>
+          <div
+            className={`text-xl font-bold ${cashInHand >= 0 ? "text-emerald-700" : "text-red-600"}`}
+          >
+            Rs. {formatCurrency(cashInHand)}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -51,14 +116,14 @@ async function ExpensesTable() {
                 <Td>{expense.description || "—"}</Td>
                 <Td>Rs. {formatCurrency(expense.amount)}</Td>
                 <Td>
-                  <form action={deleteAction}>
-                    <button
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1 rounded"
+                  <ActionForm action={deleteAction} successMessage="Expense deleted">
+                    <SubmitButton
+                      pendingText="Deleting…"
+                      className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                     >
                       Delete
-                    </button>
-                  </form>
+                    </SubmitButton>
+                  </ActionForm>
                 </Td>
               </tr>
             );
@@ -72,7 +137,11 @@ async function ExpensesTable() {
           )}
           <tr className="bg-offwhite-dim">
             <Td colSpan={5}>
-              <form action={createExpense} className="flex items-center gap-2 flex-wrap">
+              <ActionForm
+                action={createExpense}
+                successMessage="Expense added"
+                className="flex items-center gap-2 flex-wrap"
+              >
                 <input
                   name="date"
                   type="date"
@@ -101,13 +170,13 @@ async function ExpensesTable() {
                   required
                   className={`${inputClass} w-28`}
                 />
-                <button
-                  type="submit"
-                  className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
+                <SubmitButton
+                  pendingText="Adding…"
+                  className="bg-gold hover:bg-gold-dark disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                 >
                   + Add Expense
-                </button>
-              </form>
+                </SubmitButton>
+              </ActionForm>
             </Td>
           </tr>
         </tbody>

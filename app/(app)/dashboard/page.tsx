@@ -6,6 +6,7 @@ import {
   classifyInstallment,
   computeExpensesTotal,
   computeLeaseProfit,
+  computeCashInHand,
 } from "@/lib/lease-calculations";
 import { formatCompactCurrency, formatDate } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
@@ -41,6 +42,8 @@ async function DashboardContent() {
   let overdueCount = 0;
   let upcomingCount = 0;
   let totalBikeProfit = 0;
+  let totalCostPrice = 0;
+  let totalLeaseExpenses = 0;
   const modelCounts = new Map<string, number>();
 
   for (const lease of leases) {
@@ -53,10 +56,15 @@ async function DashboardContent() {
     totalFinanced += lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount;
     totalReceived += computeTotals(lease.installments).totalReceived;
 
+    const leaseExpensesTotal = computeExpensesTotal(lease.expenses ?? []);
+    const costPrice = lease.bike.costPrice ?? 0;
+    totalCostPrice += costPrice;
+    totalLeaseExpenses += leaseExpensesTotal;
+
     totalBikeProfit += computeLeaseProfit({
       rentCreditPrice: lease.creditPlan.rentCreditPrice,
-      costPrice: lease.bike.costPrice ?? 0,
-      expensesTotal: computeExpensesTotal(lease.expenses ?? []),
+      costPrice,
+      expensesTotal: leaseExpensesTotal,
     });
 
     for (const inst of lease.installments) {
@@ -69,6 +77,12 @@ async function DashboardContent() {
   }
 
   const netProfit = totalBikeProfit - generalExpensesTotal;
+  const cashInHand = computeCashInHand({
+    totalReceived,
+    totalCostPrice,
+    totalLeaseExpenses,
+    totalGeneralExpenses: generalExpensesTotal,
+  });
 
   const topModels = [...modelCounts.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -109,6 +123,12 @@ async function DashboardContent() {
           label="Net profit"
           value={`Rs. ${formatCompactCurrency(netProfit)}`}
           tone={netProfit < 0 ? "critical" : "default"}
+        />
+        <StatTile
+          label="Cash in hand"
+          value={`Rs. ${formatCompactCurrency(cashInHand)}`}
+          tone={cashInHand < 0 ? "critical" : "default"}
+          hint="Received − bike costs − expenses"
         />
       </div>
 

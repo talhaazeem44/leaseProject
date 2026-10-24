@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { ObjectId } from "mongodb";
+import type { ZodError } from "zod";
 import { getLeasesCollection, getMarkupRatesCollection } from "@/lib/db/collections";
 import { formDataToNestedObject } from "@/lib/validation/form-data";
 import {
@@ -21,7 +22,43 @@ import {
 } from "@/lib/lease-calculations";
 import type { Lease } from "@/lib/models/lease";
 
-export async function createLease(formData: FormData): Promise<void> {
+const SECTION_LABELS: Record<string, string> = {
+  bike: "Motorcycle",
+  customer: "Customer",
+  guarantor1: "Guarantor 1",
+  guarantor2: "Guarantor 2",
+  creditPlan: "Credit Plan",
+};
+
+const FIELD_LABEL_OVERRIDES: Record<string, string> = {
+  nic: "NIC",
+  dob: "Date of Birth",
+};
+
+function humanizeField(segment: string): string {
+  if (FIELD_LABEL_OVERRIDES[segment]) return FIELD_LABEL_OVERRIDES[segment];
+  return segment.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+}
+
+function formatValidationError(error: ZodError): string {
+  const messages = error.issues.map((issue) => {
+    const [section, ...rest] = issue.path;
+    const sectionLabel = SECTION_LABELS[String(section)] ?? humanizeField(String(section ?? ""));
+    const fieldLabel = rest.map((segment) => humanizeField(String(segment))).join(" ");
+    const label = [sectionLabel, fieldLabel].filter(Boolean).join(" – ");
+    return label ? `${label}: ${issue.message}` : issue.message;
+  });
+  return messages.join("; ");
+}
+
+export interface CreateLeaseState {
+  error?: string;
+}
+
+export async function createLease(
+  _prevState: CreateLeaseState | undefined,
+  formData: FormData
+): Promise<CreateLeaseState> {
   const photoFile = formData.get("customer.photo");
   const photoUrl = await saveCustomerPhoto(photoFile instanceof File ? photoFile : null);
 
@@ -34,7 +71,11 @@ export async function createLease(formData: FormData): Promise<void> {
     }
   }
 
-  const parsed = leaseFormSchema.parse(raw);
+  const parseResult = leaseFormSchema.safeParse(raw);
+  if (!parseResult.success) {
+    return { error: formatValidationError(parseResult.error) };
+  }
+  const parsed = parseResult.data;
 
   const markupRates = await (await getMarkupRatesCollection()).find().toArray();
   const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
@@ -84,7 +125,7 @@ export async function createLease(formData: FormData): Promise<void> {
   const collection = await getLeasesCollection();
   const result = await collection.insertOne(lease);
 
-  redirect(`/leases/${result.insertedId.toString()}`);
+  redirect(`/leases/${result.insertedId.toString()}?created=1`);
 }
 
 export async function recordPayment(

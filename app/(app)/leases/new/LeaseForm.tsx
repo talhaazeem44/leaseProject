@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import {
   computeCreditAmount,
   computeProfitAmount,
@@ -11,7 +12,7 @@ import {
   getMarkupRate,
 } from "@/lib/lease-calculations";
 import { formatCurrency } from "@/lib/format";
-import { createLease } from "../actions";
+import { createLease, type CreateLeaseState } from "../actions";
 
 interface RateOption {
   tenureMonths: number;
@@ -132,6 +133,14 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
   const [costPrice, setCostPrice] = useState<number>(0);
   const [advance, setAdvance] = useState<number>(0);
   const [tenureMonths, setTenureMonths] = useState<number>(rates[0]?.tenureMonths ?? 0);
+  const [state, formAction, isPending] = useActionState<CreateLeaseState | undefined, FormData>(
+    createLease,
+    undefined
+  );
+
+  useEffect(() => {
+    if (state?.error) toast.error(state.error);
+  }, [state]);
 
   const preview = useMemo(() => {
     if (!tenureMonths || retailPrice <= 0) return null;
@@ -160,7 +169,13 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
   }, [rates, tenureMonths, retailPrice, advance, costPrice]);
 
   return (
-    <form action={createLease} className="space-y-6">
+    <form action={formAction} className="space-y-6">
+      {state?.error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {state.error}
+        </p>
+      )}
+
       <SectionCard title="Motorcycle Information">
         <Field label="Chassis #" name="bike.chassisNo" required />
         <Field label="Engine #" name="bike.engineNo" required />
@@ -379,9 +394,10 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
 
       <button
         type="submit"
-        className="bg-gold hover:bg-gold-dark text-white font-medium px-6 py-2 rounded"
+        disabled={isPending}
+        className="bg-gold hover:bg-gold-dark disabled:opacity-60 text-white font-medium px-6 py-2 rounded"
       >
-        Create Lease
+        {isPending ? "Creating…" : "Create Lease"}
       </button>
     </form>
   );

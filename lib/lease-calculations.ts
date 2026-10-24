@@ -162,6 +162,26 @@ export function computeLeaseProfit(params: {
   return round2(params.rentCreditPrice - params.costPrice - params.expensesTotal);
 }
 
+/**
+ * Actual liquid cash on hand: money customers have really paid in so far,
+ * minus money actually spent (buying bikes, lease expenses, business
+ * expenses). Unlike profit, this doesn't count revenue that's still sitting
+ * in unpaid future installments.
+ */
+export function computeCashInHand(params: {
+  totalReceived: number;
+  totalCostPrice: number;
+  totalLeaseExpenses: number;
+  totalGeneralExpenses: number;
+}): number {
+  return round2(
+    params.totalReceived -
+      params.totalCostPrice -
+      params.totalLeaseExpenses -
+      params.totalGeneralExpenses
+  );
+}
+
 export type ReminderBucket = "overdue" | "upcoming";
 
 export function classifyInstallment(

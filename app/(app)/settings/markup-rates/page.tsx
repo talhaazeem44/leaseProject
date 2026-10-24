@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { getMarkupRatesCollection } from "@/lib/db/collections";
 import { Table, THead, Th, Td } from "@/components/Table";
+import { ActionForm } from "@/components/ActionForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createMarkupRate, updateMarkupRate, deleteMarkupRate } from "./actions";
 
 const inputClass = "w-24 border border-gold bg-white rounded px-2 py-1 text-sm";
@@ -44,7 +46,11 @@ async function RatesTable() {
             return (
               <tr key={id}>
                 <Td colSpan={3}>
-                  <form id={`edit-${id}`} action={updateAction} className="flex items-center gap-2">
+                  <ActionForm
+                    action={updateAction}
+                    successMessage="Rate updated"
+                    className="flex items-center gap-2"
+                  >
                     <input
                       name="tenureMonths"
                       type="number"
@@ -67,30 +73,31 @@ async function RatesTable() {
                       placeholder="Label"
                       className={`${inputClass} w-36`}
                     />
-                    <button
-                      type="submit"
-                      className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
-                    >
+                    <SubmitButton className="bg-gold hover:bg-gold-dark disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded">
                       Save
-                    </button>
-                  </form>
+                    </SubmitButton>
+                  </ActionForm>
                 </Td>
                 <Td>
-                  <form action={deleteAction}>
-                    <button
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1 rounded"
+                  <ActionForm action={deleteAction} successMessage="Rate deleted">
+                    <SubmitButton
+                      pendingText="Deleting…"
+                      className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                     >
                       Delete
-                    </button>
-                  </form>
+                    </SubmitButton>
+                  </ActionForm>
                 </Td>
               </tr>
             );
           })}
           <tr className="bg-offwhite-dim">
             <Td colSpan={4}>
-              <form action={createMarkupRate} className="flex items-center gap-2">
+              <ActionForm
+                action={createMarkupRate}
+                successMessage="Rate added"
+                className="flex items-center gap-2"
+              >
                 <input
                   name="tenureMonths"
                   type="number"
@@ -112,13 +119,13 @@ async function RatesTable() {
                   placeholder="Label (optional)"
                   className={`${inputClass} w-36`}
                 />
-                <button
-                  type="submit"
-                  className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
+                <SubmitButton
+                  pendingText="Adding…"
+                  className="bg-gold hover:bg-gold-dark disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                 >
                   + Add Rate
-                </button>
-              </form>
+                </SubmitButton>
+              </ActionForm>
             </Td>
           </tr>
         </tbody>

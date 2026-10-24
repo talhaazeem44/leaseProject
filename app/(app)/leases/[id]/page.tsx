@@ -6,14 +6,20 @@ import { getLeasesCollection } from "@/lib/db/collections";
 import { computeTotals, computeExpensesTotal, computeLeaseProfit } from "@/lib/lease-calculations";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SectionHeader, InfoGrid, InfoField, Table, THead, Th, Td } from "@/components/Table";
+import { ActionForm } from "@/components/ActionForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { PaymentRow } from "./PaymentRow";
 import { addLeaseExpense, deleteLeaseExpense } from "../actions";
+import { CreatedToast } from "./CreatedToast";
 
 const expenseInputClass = "border border-gold bg-white rounded px-1.5 py-1 text-xs";
 
 export default function LeasePage({ params }: PageProps<"/leases/[id]">) {
   return (
     <div className="max-w-6xl mx-auto p-6">
+      <Suspense fallback={null}>
+        <CreatedToast />
+      </Suspense>
       <Suspense fallback={<p className="text-sm text-neutral-500">Loading lease…</p>}>
         <LeaseDetail params={params} />
       </Suspense>
@@ -251,14 +257,14 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
                   <Td>{expense.description}</Td>
                   <Td>Rs. {formatCurrency(expense.amount)}</Td>
                   <Td>
-                    <form action={deleteAction}>
-                      <button
-                        type="submit"
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1 rounded"
+                    <ActionForm action={deleteAction} successMessage="Expense deleted">
+                      <SubmitButton
+                        pendingText="Deleting…"
+                        className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                       >
                         Delete
-                      </button>
-                    </form>
+                      </SubmitButton>
+                    </ActionForm>
                   </Td>
                 </tr>
               );
@@ -272,7 +278,11 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
             )}
             <tr className="bg-offwhite-dim">
               <Td colSpan={4}>
-                <form action={addExpenseAction} className="flex items-center gap-2 flex-wrap">
+                <ActionForm
+                  action={addExpenseAction}
+                  successMessage="Expense added"
+                  className="flex items-center gap-2 flex-wrap"
+                >
                   <input type="date" name="date" required className={expenseInputClass} />
                   <input
                     type="text"
@@ -289,13 +299,13 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
                     required
                     className={`${expenseInputClass} w-28`}
                   />
-                  <button
-                    type="submit"
-                    className="bg-gold hover:bg-gold-dark text-white text-xs font-medium px-3 py-1 rounded"
+                  <SubmitButton
+                    pendingText="Adding…"
+                    className="bg-gold hover:bg-gold-dark disabled:opacity-60 text-white text-xs font-medium px-3 py-1 rounded"
                   >
                     + Add Expense
-                  </button>
-                </form>
+                  </SubmitButton>
+                </ActionForm>
               </Td>
             </tr>
           </tbody>
