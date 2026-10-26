@@ -105,6 +105,7 @@ export async function createLease(
     guarantors,
     creditPlan: {
       fileRefNo: parsed.creditPlan.fileRefNo,
+      dealershipName: parsed.creditPlan.dealershipName,
       startingMonth: parsed.creditPlan.startingMonth,
       numberOfInstallments: parsed.creditPlan.numberOfInstallments,
       registrationFee: parsed.creditPlan.registrationFee,
@@ -152,6 +153,7 @@ export async function recordPayment(
       latePaymentCharges: parsed.latePaymentCharges,
       paymentDetails: parsed.paymentDetails,
       chequeNo: parsed.chequeNo,
+      bankName: parsed.bankName,
     },
     totalPayable
   );

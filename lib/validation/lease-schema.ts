@@ -59,6 +59,7 @@ export const guarantorSchema = z.object({
 
 export const creditPlanInputSchema = z.object({
   fileRefNo: z.string().optional().default(""),
+  dealershipName: z.string().optional().default(""),
   startingMonth: dateStringSchema,
   numberOfInstallments: z.coerce.number().int().positive(),
   registrationFee: z.coerce.number().nonnegative().default(0),
@@ -83,6 +84,7 @@ export const paymentFormSchema = z.object({
   latePaymentCharges: z.coerce.number().nonnegative().optional().default(0),
   paymentDetails: z.string().optional().default(""),
   chequeNo: z.string().optional().default(""),
+  bankName: z.string().optional().default(""),
 });
 
 export const leaseExpenseFormSchema = z.object({

@@ -6,7 +6,7 @@ import { LeaseForm } from "./LeaseForm";
 export default function NewLeasePage() {
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h1 className="text-xl font-bold">New Lease</h1>
         <Link
           href="/leases/print-blank"

@@ -8,9 +8,9 @@ import { Table, THead, Th, Td } from "@/components/Table";
 export default function LeasesPage({ searchParams }: PageProps<"/leases">) {
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h1 className="text-xl font-bold">Leases</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             href="/leases/print-blank"
             className="border border-gold text-sm font-medium px-4 py-2 rounded hover:bg-offwhite-dim"

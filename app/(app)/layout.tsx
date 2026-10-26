@@ -1,43 +1,10 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { logout } from "@/app/login/actions";
-
-const navLinkClass =
-  "block px-3 py-2 rounded text-sm font-medium hover:bg-sidebar-hover hover:text-gold-light";
+import { AppSidebar } from "./AppSidebar";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-1 min-h-screen print:block print:min-h-0">
-      <aside className="w-56 shrink-0 bg-sidebar text-white flex flex-col border-r-2 border-gold print:hidden">
-        <div className="px-4 py-4 border-b border-gold/40">
-          <span className="font-bold text-lg text-gold-light">Sami Electronics</span>
-        </div>
-        <nav className="flex-1 flex flex-col gap-1 p-3">
-          <Link href="/dashboard" className={navLinkClass}>
-            Dashboard
-          </Link>
-          <Link href="/leases" className={navLinkClass}>
-            Leases
-          </Link>
-          <Link href="/reminders" className={navLinkClass}>
-            Reminders
-          </Link>
-          <Link href="/expenses" className={navLinkClass}>
-            Expenses
-          </Link>
-          <Link href="/settings/markup-rates" className={navLinkClass}>
-            Markup Rates
-          </Link>
-        </nav>
-        <form action={logout} className="p-3 border-t border-gold/40">
-          <button
-            type="submit"
-            className="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-sidebar-hover hover:text-gold-light cursor-pointer"
-          >
-            Logout
-          </button>
-        </form>
-      </aside>
+    <div className="flex flex-col lg:flex-row flex-1 min-h-screen print:block print:min-h-0">
+      <AppSidebar />
       <div className="flex-1 min-w-0 bg-offwhite">{children}</div>
     </div>
   );

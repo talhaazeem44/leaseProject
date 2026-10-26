@@ -184,6 +184,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
         <SectionHeader>Credit Plan</SectionHeader>
         <InfoGrid>
           <InfoField label="File Ref No" value={creditPlan.fileRefNo} />
+          <InfoField label="Dealership Name" value={creditPlan.dealershipName} />
           <InfoField label="Retail Price" value={`Rs. ${formatCurrency(creditPlan.retailPrice)}`} />
           <InfoField label="Starting Month" value={formatDate(creditPlan.startingMonth)} />
           <InfoField
@@ -223,6 +224,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
             <Th>Late Charges</Th>
             <Th>Payment Details</Th>
             <Th>Cheque #</Th>
+            <Th>Bank</Th>
             <Th>Action</Th>
           </THead>
           <tbody>
@@ -233,7 +235,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
               <Td colSpan={4}>Total</Td>
               <Td>Rs. {formatCurrency(totals.totalReceived)}</Td>
               <Td>{formatCurrency(totals.totalShortOver)}</Td>
-              <Td colSpan={5} />
+              <Td colSpan={6} />
             </tr>
           </tbody>
         </Table>

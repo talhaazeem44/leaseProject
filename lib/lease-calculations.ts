@@ -65,6 +65,7 @@ export function generateInstallmentSchedule(input: ScheduleInput): Installment[]
     latePaymentCharges: 0,
     paymentDetails: "ADVANCE",
     chequeNo: "",
+    bankName: "",
   };
 
   const rows: Installment[] = [];
@@ -84,6 +85,7 @@ export function generateInstallmentSchedule(input: ScheduleInput): Installment[]
       latePaymentCharges: 0,
       paymentDetails: "",
       chequeNo: "",
+      bankName: "",
     });
   }
 
@@ -114,6 +116,7 @@ export interface PaymentInput {
   latePaymentCharges?: number;
   paymentDetails?: string;
   chequeNo?: string;
+  bankName?: string;
 }
 
 /** Records a payment against one row and recomputes short/over + cascaded balance. */
@@ -133,6 +136,7 @@ export function applyPayment(
           latePaymentCharges: payment.latePaymentCharges ?? inst.latePaymentCharges,
           paymentDetails: payment.paymentDetails ?? inst.paymentDetails,
           chequeNo: payment.chequeNo ?? inst.chequeNo,
+          bankName: payment.bankName ?? inst.bankName,
         }
       : inst
   );

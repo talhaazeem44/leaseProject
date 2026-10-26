@@ -312,6 +312,7 @@ export function LeaseForm({ rates }: { rates: RateOption[] }) {
         </legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
           <Field label="File Ref No" name="creditPlan.fileRefNo" />
+          <Field label="Dealership Name" name="creditPlan.dealershipName" />
           <Field label="Starting Month" name="creditPlan.startingMonth" type="date" required />
           <div>
             <label className={labelClass}>

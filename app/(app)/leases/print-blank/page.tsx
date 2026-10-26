@@ -157,6 +157,7 @@ export default function PrintBlankLeasePage() {
         <SectionHeader>Credit Plan</SectionHeader>
         <FieldGrid>
           <BlankField label="File Ref No" />
+          <BlankField label="Dealership Name" />
           <BlankField label="Retail Price" />
           <BlankField label="Starting Month" />
           <BlankField label="Rent / Credit Price" />
@@ -187,6 +188,7 @@ export default function PrintBlankLeasePage() {
                   "Late Charges",
                   "Payment Details",
                   "Cheque #",
+                  "Bank",
                 ].map((h) => (
                   <th
                     key={h}
@@ -203,7 +205,7 @@ export default function PrintBlankLeasePage() {
                   <td className="border border-gold/40 print:border-black px-3 py-2">
                     {i + 1}
                   </td>
-                  {Array.from({ length: 9 }, (_, j) => (
+                  {Array.from({ length: 10 }, (_, j) => (
                     <td
                       key={j}
                       className="border border-gold/40 print:border-black px-3 py-2"

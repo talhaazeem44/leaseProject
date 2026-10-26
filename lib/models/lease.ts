@@ -60,10 +60,12 @@ export interface Installment {
   latePaymentCharges: number;
   paymentDetails: string;
   chequeNo: string;
+  bankName: string;
 }
 
 export interface CreditPlan {
   fileRefNo: string;
+  dealershipName: string;
   startingMonth: Date;
   numberOfInstallments: number;
   registrationFee: number;

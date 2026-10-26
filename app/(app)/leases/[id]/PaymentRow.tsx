@@ -42,7 +42,7 @@ export function PaymentRow({
         <Td>{installment.shortOver ?? 0}</Td>
         <Td>{formatCurrency(installment.remainingBalance)}</Td>
         <Td>{formatCurrency(installment.latePaymentCharges)}</Td>
-        <Td colSpan={3}>ADVANCE</Td>
+        <Td colSpan={4}>ADVANCE</Td>
       </tr>
     );
   }
@@ -60,6 +60,7 @@ export function PaymentRow({
         <Td>{formatCurrency(installment.latePaymentCharges)}</Td>
         <Td>{installment.paymentDetails}</Td>
         <Td>{installment.chequeNo}</Td>
+        <Td>{installment.bankName}</Td>
         <Td>
           <StatusBadge status="paid" />
         </Td>
@@ -131,6 +132,15 @@ export function PaymentRow({
           name="chequeNo"
           form={formId}
           placeholder="Cheque #"
+          className={inputClass}
+        />
+      </Td>
+      <Td>
+        <input
+          type="text"
+          name="bankName"
+          form={formId}
+          placeholder="Bank"
           className={inputClass}
         />
       </Td>
