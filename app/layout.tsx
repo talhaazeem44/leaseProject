@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -16,6 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Sami Electronics",
   description: "Motorcycle lease management",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sami Electronics",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#3a3a36",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
