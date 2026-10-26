@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
+import packageJson from "../../package.json";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -111,6 +112,7 @@ export function AppSidebar() {
             Logout
           </button>
         </form>
+        <p className="px-3 pb-3 text-xs text-white/30">v{packageJson.version}</p>
       </aside>
     </>
   );
