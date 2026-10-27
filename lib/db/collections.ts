@@ -4,6 +4,7 @@ import type { Lease } from "../models/lease";
 import type { MarkupRate } from "../models/markup-rate";
 import type { User } from "../models/user";
 import type { Expense } from "../models/expense";
+import type { Investment } from "../models/investment";
 
 // Cache Components can't see the MongoDB driver's internal I/O as a suspension
 // point, so `await io()` marks every query against these collections as
@@ -30,4 +31,10 @@ export async function getExpensesCollection() {
   await io();
   const client = await clientPromise;
   return client.db(dbName).collection<Expense>("expenses");
+}
+
+export async function getInvestmentsCollection() {
+  await io();
+  const client = await clientPromise;
+  return client.db(dbName).collection<Investment>("investments");
 }

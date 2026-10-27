@@ -153,6 +153,10 @@ export function computeExpensesTotal(expenses: { amount: number }[]): number {
   return round2(expenses.reduce((sum, e) => sum + e.amount, 0));
 }
 
+export function computeInvestmentsTotal(investments: { amount: number }[]): number {
+  return round2(investments.reduce((sum, i) => sum + i.amount, 0));
+}
+
 /**
  * Profit on a single bike/lease: what the customer ultimately pays (retail
  * price plus the financing markup) minus what the bike cost to acquire and
@@ -167,19 +171,23 @@ export function computeLeaseProfit(params: {
 }
 
 /**
- * Actual liquid cash on hand: money customers have really paid in so far,
- * minus money actually spent (buying bikes, lease expenses, business
- * expenses). Unlike profit, this doesn't count revenue that's still sitting
- * in unpaid future installments.
+ * Actual liquid cash on hand: capital you've put into the business plus
+ * money customers have really paid in so far, minus money actually spent
+ * (buying bikes, lease expenses, business expenses). Unlike profit, this
+ * doesn't count revenue that's still sitting in unpaid future installments,
+ * and unlike profit, capital you invest isn't "earnings" so it's added here
+ * but deliberately left out of the profit calculations.
  */
 export function computeCashInHand(params: {
   totalReceived: number;
+  totalInvestment: number;
   totalCostPrice: number;
   totalLeaseExpenses: number;
   totalGeneralExpenses: number;
 }): number {
   return round2(
-    params.totalReceived -
+    params.totalReceived +
+      params.totalInvestment -
       params.totalCostPrice -
       params.totalLeaseExpenses -
       params.totalGeneralExpenses

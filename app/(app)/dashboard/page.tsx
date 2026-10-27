@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getLeasesCollection, getExpensesCollection } from "@/lib/db/collections";
+import {
+  getLeasesCollection,
+  getExpensesCollection,
+  getInvestmentsCollection,
+} from "@/lib/db/collections";
 import {
   computeTotals,
   classifyInstallment,
   computeExpensesTotal,
+  computeInvestmentsTotal,
   computeLeaseProfit,
   computeCashInHand,
 } from "@/lib/lease-calculations";
@@ -29,6 +34,9 @@ async function DashboardContent() {
   const expensesCollection = await getExpensesCollection();
   const generalExpenses = await expensesCollection.find().toArray();
   const generalExpensesTotal = computeExpensesTotal(generalExpenses);
+  const investmentsCollection = await getInvestmentsCollection();
+  const investments = await investmentsCollection.find().toArray();
+  const totalInvestment = computeInvestmentsTotal(investments);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -79,6 +87,7 @@ async function DashboardContent() {
   const netProfit = totalBikeProfit - generalExpensesTotal;
   const cashInHand = computeCashInHand({
     totalReceived,
+    totalInvestment,
     totalCostPrice,
     totalLeaseExpenses,
     totalGeneralExpenses: generalExpensesTotal,
@@ -125,10 +134,14 @@ async function DashboardContent() {
           tone={netProfit < 0 ? "critical" : "default"}
         />
         <StatTile
+          label="Your investment"
+          value={`Rs. ${formatCompactCurrency(totalInvestment)}`}
+        />
+        <StatTile
           label="Cash in hand"
           value={`Rs. ${formatCompactCurrency(cashInHand)}`}
           tone={cashInHand < 0 ? "critical" : "default"}
-          hint="Received − bike costs − expenses"
+          hint="Investment + received − bike costs − expenses"
         />
       </div>
 
