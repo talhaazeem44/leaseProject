@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { ObjectId } from "mongodb";
 import { getLeasesCollection } from "@/lib/db/collections";
 import { computeTotals, computeExpensesTotal, computeLeaseProfit } from "@/lib/lease-calculations";
@@ -9,7 +10,7 @@ import { SectionHeader, InfoGrid, InfoField, Table, THead, Th, Td } from "@/comp
 import { ActionForm } from "@/components/ActionForm";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PaymentRow } from "./PaymentRow";
-import { addLeaseExpense, deleteLeaseExpense } from "../actions";
+import { addLeaseExpense, deleteLeaseExpense, deleteLease } from "../actions";
 import { CreatedToast } from "./CreatedToast";
 
 const expenseInputClass = "border border-gold bg-white rounded px-1.5 py-1 text-xs";
@@ -53,12 +54,36 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
   });
   const leaseId = lease._id!.toString();
   const addExpenseAction = addLeaseExpense.bind(null, leaseId);
+  const deleteLeaseAction = deleteLease.bind(null, leaseId);
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">
-        Lease — {customer.name} ({bike.model})
-      </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl font-bold">
+          Lease — {customer.name} ({bike.model})
+        </h1>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/leases/${leaseId}/edit`}
+            className="border border-gold text-sm font-medium px-4 py-2 rounded hover:bg-offwhite-dim"
+          >
+            Edit Lease
+          </Link>
+          <ActionForm
+            action={deleteLeaseAction}
+            successMessage="Lease deleted"
+            confirmMessage={`Delete the lease for ${customer.name}? This also removes all recorded payments and expenses on it. This cannot be undone.`}
+            redirectTo="/leases"
+          >
+            <SubmitButton
+              pendingText="Deleting…"
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded"
+            >
+              Delete Lease
+            </SubmitButton>
+          </ActionForm>
+        </div>
+      </div>
 
       <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Profit Summary</SectionHeader>

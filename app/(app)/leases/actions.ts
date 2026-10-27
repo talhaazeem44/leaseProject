@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
 import { ObjectId } from "mongodb";
 import type { ZodError } from "zod";
 import { getLeasesCollection, getMarkupRatesCollection } from "@/lib/db/collections";
@@ -21,6 +23,15 @@ import {
   applyPayment,
 } from "@/lib/lease-calculations";
 import type { Lease } from "@/lib/models/lease";
+
+async function deleteUploadedPhoto(photoUrl: string | undefined): Promise<void> {
+  if (!photoUrl) return;
+  try {
+    await unlink(path.join(process.cwd(), "public", photoUrl));
+  } catch {
+    // Best-effort cleanup; a missing file shouldn't block the lease mutation.
+  }
+}
 
 const SECTION_LABELS: Record<string, string> = {
   bike: "Motorcycle",
@@ -51,17 +62,13 @@ function formatValidationError(error: ZodError): string {
   return messages.join("; ");
 }
 
-export interface CreateLeaseState {
+export interface LeaseFormState {
   error?: string;
 }
+export type CreateLeaseState = LeaseFormState;
+export type UpdateLeaseState = LeaseFormState;
 
-export async function createLease(
-  _prevState: CreateLeaseState | undefined,
-  formData: FormData
-): Promise<CreateLeaseState> {
-  const photoFile = formData.get("customer.photo");
-  const photoUrl = await saveCustomerPhoto(photoFile instanceof File ? photoFile : null);
-
+function parseLeaseForm(formData: FormData) {
   const raw = formDataToNestedObject(formData) as Record<string, unknown>;
 
   for (const key of ["guarantor1", "guarantor2"] as const) {
@@ -71,7 +78,17 @@ export async function createLease(
     }
   }
 
-  const parseResult = leaseFormSchema.safeParse(raw);
+  return leaseFormSchema.safeParse(raw);
+}
+
+export async function createLease(
+  _prevState: CreateLeaseState | undefined,
+  formData: FormData
+): Promise<CreateLeaseState> {
+  const photoFile = formData.get("customer.photo");
+  const photoUrl = await saveCustomerPhoto(photoFile instanceof File ? photoFile : null);
+
+  const parseResult = parseLeaseForm(formData);
   if (!parseResult.success) {
     return { error: formatValidationError(parseResult.error) };
   }
@@ -127,6 +144,126 @@ export async function createLease(
   const result = await collection.insertOne(lease);
 
   redirect(`/leases/${result.insertedId.toString()}?created=1`);
+}
+
+export async function updateLease(
+  leaseId: string,
+  _prevState: UpdateLeaseState | undefined,
+  formData: FormData
+): Promise<UpdateLeaseState> {
+  const collection = await getLeasesCollection();
+  const existing = await collection.findOne({ _id: new ObjectId(leaseId) });
+  if (!existing) {
+    return { error: "Lease not found." };
+  }
+
+  const parseResult = parseLeaseForm(formData);
+  if (!parseResult.success) {
+    return { error: formatValidationError(parseResult.error) };
+  }
+  const parsed = parseResult.data;
+
+  const hasRecordedPayments = existing.installments.some(
+    (i) => i.sr > 0 && i.receivedAmount !== null
+  );
+  const creditPlanChanged =
+    parsed.creditPlan.retailPrice !== existing.creditPlan.retailPrice ||
+    parsed.creditPlan.advance !== existing.creditPlan.advance ||
+    parsed.creditPlan.numberOfInstallments !== existing.creditPlan.numberOfInstallments ||
+    parsed.creditPlan.startingMonth.getTime() !== existing.creditPlan.startingMonth.getTime();
+
+  if (hasRecordedPayments && creditPlanChanged) {
+    return {
+      error:
+        "This lease already has recorded payments, so Retail Price, Advance, Tenure, and " +
+        "Starting Month can't be changed. Correct other details, or delete the recorded " +
+        "payments first if the credit terms genuinely need to change.",
+    };
+  }
+
+  let { installments, creditPlan } = existing;
+  if (!hasRecordedPayments) {
+    const markupRates = await (await getMarkupRatesCollection()).find().toArray();
+    const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
+    const creditAmount = computeCreditAmount(
+      parsed.creditPlan.retailPrice,
+      parsed.creditPlan.advance
+    );
+    const profitAmount = computeProfitAmount(creditAmount, ratePercent);
+    const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
+    installments = generateInstallmentSchedule({
+      startingMonth: parsed.creditPlan.startingMonth,
+      numberOfInstallments: parsed.creditPlan.numberOfInstallments,
+      creditAmount,
+      profitAmount,
+      advance: parsed.creditPlan.advance,
+    });
+    creditPlan = {
+      fileRefNo: parsed.creditPlan.fileRefNo,
+      dealershipName: parsed.creditPlan.dealershipName,
+      startingMonth: parsed.creditPlan.startingMonth,
+      numberOfInstallments: parsed.creditPlan.numberOfInstallments,
+      registrationFee: parsed.creditPlan.registrationFee,
+      documentCharges: parsed.creditPlan.documentCharges,
+      retailPrice: parsed.creditPlan.retailPrice,
+      rentCreditPrice,
+      advance: parsed.creditPlan.advance,
+      rentProfitRatePercent: ratePercent,
+      rentProfitAmount: profitAmount,
+      creditAmount,
+    };
+  } else {
+    // Credit terms are locked, but non-financial fields (file ref, dealership name,
+    // registration fee, document charges) are always safe to update.
+    creditPlan = {
+      ...existing.creditPlan,
+      fileRefNo: parsed.creditPlan.fileRefNo,
+      dealershipName: parsed.creditPlan.dealershipName,
+      registrationFee: parsed.creditPlan.registrationFee,
+      documentCharges: parsed.creditPlan.documentCharges,
+    };
+  }
+
+  const photoFile = formData.get("customer.photo");
+  let photoUrl = existing.customer.photoUrl;
+  if (photoFile instanceof File && photoFile.size > 0) {
+    const newPhotoUrl = await saveCustomerPhoto(photoFile);
+    if (newPhotoUrl) {
+      await deleteUploadedPhoto(existing.customer.photoUrl);
+      photoUrl = newPhotoUrl;
+    }
+  }
+
+  const guarantors = [parsed.guarantor1, parsed.guarantor2].filter(
+    (g): g is NonNullable<typeof g> => g !== undefined
+  );
+
+  await collection.updateOne(
+    { _id: new ObjectId(leaseId) },
+    {
+      $set: {
+        bike: parsed.bike,
+        customer: { ...parsed.customer, photoUrl },
+        guarantors,
+        creditPlan,
+        installments,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  redirect(`/leases/${leaseId}?updated=1`);
+}
+
+export async function deleteLease(leaseId: string): Promise<void> {
+  const collection = await getLeasesCollection();
+  const lease = await collection.findOne({ _id: new ObjectId(leaseId) });
+  if (!lease) throw new Error("Lease not found");
+
+  await collection.deleteOne({ _id: new ObjectId(leaseId) });
+  await deleteUploadedPhoto(lease.customer.photoUrl);
+
+  refresh();
 }
 
 export async function recordPayment(
