@@ -262,6 +262,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
               <Th>Payment Details</Th>
               <Th>Cheque #</Th>
               <Th>Bank</Th>
+              <Th>Method</Th>
               <Th>Action</Th>
             </THead>
             <tbody>
@@ -272,7 +273,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
                 <Td colSpan={4}>Total</Td>
                 <Td>Rs. {formatCurrency(totals.totalReceived)}</Td>
                 <Td>{formatCurrency(totals.totalShortOver)}</Td>
-                <Td colSpan={6} />
+                <Td colSpan={7} />
               </tr>
             </tbody>
           </Table>

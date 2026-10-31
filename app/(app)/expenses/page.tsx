@@ -9,6 +9,7 @@ import {
   computeInvestmentsTotal,
   computeTotals,
   computeCashInHand,
+  computeMethodTotals,
 } from "@/lib/lease-calculations";
 import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
 import { Table, THead, Th, Td, SectionHeader } from "@/components/Table";
@@ -56,16 +57,21 @@ async function CashInHandSummary() {
   const generalExpensesTotal = computeExpensesTotal(generalExpenses);
   const totalInvestment = computeInvestmentsTotal(investments);
   let totalReceived = 0;
+  let totalCashReceived = 0;
+  let totalBankTransferReceived = 0;
   let totalCostPrice = 0;
   let totalLeaseExpenses = 0;
   for (const lease of leases) {
     totalReceived += computeTotals(lease.installments).totalReceived;
+    const methodTotals = computeMethodTotals(lease.installments);
+    totalCashReceived += methodTotals.cashReceived;
+    totalBankTransferReceived += methodTotals.bankTransferReceived;
     totalCostPrice += lease.bike.costPrice ?? 0;
     totalLeaseExpenses += computeExpensesTotal(lease.expenses ?? []);
   }
 
   const cashInHand = computeCashInHand({
-    totalReceived,
+    totalCashReceived,
     totalInvestment,
     totalCostPrice,
     totalLeaseExpenses,
@@ -83,6 +89,14 @@ async function CashInHandSummary() {
         <div>
           <div className="text-xs text-neutral-500">Received from Customers</div>
           <div className="font-semibold">Rs. {formatCurrency(totalReceived)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">— Cash</div>
+          <div className="font-semibold">Rs. {formatCurrency(totalCashReceived)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-neutral-500">— Bank Transfer</div>
+          <div className="font-semibold">Rs. {formatCurrency(totalBankTransferReceived)}</div>
         </div>
         <div>
           <div className="text-xs text-neutral-500">Spent on Bikes</div>
@@ -103,6 +117,7 @@ async function CashInHandSummary() {
           >
             Rs. {formatCurrency(cashInHand)}
           </div>
+          <div className="text-xs text-neutral-400">Cash only — bank transfers excluded</div>
         </div>
       </div>
     </div>

@@ -1,6 +1,11 @@
 import { addMonths } from "date-fns";
 import type { Installment } from "./models/lease";
 
+/** Installments recorded before the payment-method field existed are treated as cash. */
+function effectivePaymentMethod(inst: Installment): "cash" | "bank_transfer" {
+  return inst.paymentMethod ?? "cash";
+}
+
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -66,6 +71,7 @@ export function generateInstallmentSchedule(input: ScheduleInput): Installment[]
     paymentDetails: "ADVANCE",
     chequeNo: "",
     bankName: "",
+    paymentMethod: "cash",
   };
 
   const rows: Installment[] = [];
@@ -86,6 +92,7 @@ export function generateInstallmentSchedule(input: ScheduleInput): Installment[]
       paymentDetails: "",
       chequeNo: "",
       bankName: "",
+      paymentMethod: null,
     });
   }
 
@@ -117,6 +124,7 @@ export interface PaymentInput {
   paymentDetails?: string;
   chequeNo?: string;
   bankName?: string;
+  paymentMethod: "cash" | "bank_transfer";
 }
 
 /** Records a payment against one row and recomputes short/over + cascaded balance. */
@@ -137,6 +145,7 @@ export function applyPayment(
           paymentDetails: payment.paymentDetails ?? inst.paymentDetails,
           chequeNo: payment.chequeNo ?? inst.chequeNo,
           bankName: payment.bankName ?? inst.bankName,
+          paymentMethod: payment.paymentMethod,
         }
       : inst
   );
@@ -147,6 +156,21 @@ export function computeTotals(installments: Installment[]) {
   const totalReceived = installments.reduce((s, i) => s + (i.receivedAmount ?? 0), 0);
   const totalShortOver = installments.reduce((s, i) => s + (i.shortOver ?? 0), 0);
   return { totalReceived: round2(totalReceived), totalShortOver: round2(totalShortOver) };
+}
+
+/** Splits received amounts by how they came in; legacy entries (no method recorded) count as cash. */
+export function computeMethodTotals(installments: Installment[]) {
+  let cashReceived = 0;
+  let bankTransferReceived = 0;
+  for (const inst of installments) {
+    if (inst.receivedAmount === null) continue;
+    if (effectivePaymentMethod(inst) === "bank_transfer") {
+      bankTransferReceived += inst.receivedAmount;
+    } else {
+      cashReceived += inst.receivedAmount;
+    }
+  }
+  return { cashReceived: round2(cashReceived), bankTransferReceived: round2(bankTransferReceived) };
 }
 
 export function computeExpensesTotal(expenses: { amount: number }[]): number {
@@ -171,22 +195,23 @@ export function computeLeaseProfit(params: {
 }
 
 /**
- * Actual liquid cash on hand: capital you've put into the business plus
- * money customers have really paid in so far, minus money actually spent
+ * Actual physical cash on hand: capital you've put into the business plus
+ * money customers have paid in as cash (bank transfers sit in the bank, not
+ * in your hand, so they're excluded here), minus money actually spent
  * (buying bikes, lease expenses, business expenses). Unlike profit, this
  * doesn't count revenue that's still sitting in unpaid future installments,
  * and unlike profit, capital you invest isn't "earnings" so it's added here
  * but deliberately left out of the profit calculations.
  */
 export function computeCashInHand(params: {
-  totalReceived: number;
+  totalCashReceived: number;
   totalInvestment: number;
   totalCostPrice: number;
   totalLeaseExpenses: number;
   totalGeneralExpenses: number;
 }): number {
   return round2(
-    params.totalReceived +
+    params.totalCashReceived +
       params.totalInvestment -
       params.totalCostPrice -
       params.totalLeaseExpenses -

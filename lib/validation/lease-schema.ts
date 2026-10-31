@@ -85,6 +85,7 @@ export const paymentFormSchema = z.object({
   paymentDetails: z.string().optional().default(""),
   chequeNo: z.string().optional().default(""),
   bankName: z.string().optional().default(""),
+  paymentMethod: z.enum(["cash", "bank_transfer"]).default("cash"),
 });
 
 export const leaseExpenseFormSchema = z.object({

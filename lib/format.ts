@@ -1,12 +1,5 @@
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-PK", { maximumFractionDigits: 2 }).format(amount);
-}
-
-export function formatCompactCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-PK", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(amount);
+  return new Intl.NumberFormat("en-PK", { maximumFractionDigits: 0 }).format(Math.round(amount));
 }
 
 export function formatDate(date: Date | string | null): string {

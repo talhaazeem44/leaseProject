@@ -12,8 +12,9 @@ import {
   computeInvestmentsTotal,
   computeLeaseProfit,
   computeCashInHand,
+  computeMethodTotals,
 } from "@/lib/lease-calculations";
-import { formatCompactCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
 import { Table, THead, Th, Td } from "@/components/Table";
 
@@ -47,6 +48,8 @@ async function DashboardContent() {
   let newThisMonth = 0;
   let totalFinanced = 0;
   let totalReceived = 0;
+  let totalCashReceived = 0;
+  let totalBankTransferReceived = 0;
   let overdueCount = 0;
   let upcomingCount = 0;
   let totalBikeProfit = 0;
@@ -63,6 +66,9 @@ async function DashboardContent() {
 
     totalFinanced += lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount;
     totalReceived += computeTotals(lease.installments).totalReceived;
+    const methodTotals = computeMethodTotals(lease.installments);
+    totalCashReceived += methodTotals.cashReceived;
+    totalBankTransferReceived += methodTotals.bankTransferReceived;
 
     const leaseExpensesTotal = computeExpensesTotal(lease.expenses ?? []);
     const costPrice = lease.bike.costPrice ?? 0;
@@ -86,7 +92,7 @@ async function DashboardContent() {
 
   const netProfit = totalBikeProfit - generalExpensesTotal;
   const cashInHand = computeCashInHand({
-    totalReceived,
+    totalCashReceived,
     totalInvestment,
     totalCostPrice,
     totalLeaseExpenses,
@@ -107,8 +113,16 @@ async function DashboardContent() {
         <StatTile label="Active leases" value={String(activeLeases)} />
         <StatTile label="Completed leases" value={String(completedLeases)} />
         <StatTile label="New this month" value={String(newThisMonth)} />
-        <StatTile label="Total financed" value={`Rs. ${formatCompactCurrency(totalFinanced)}`} />
-        <StatTile label="Total received" value={`Rs. ${formatCompactCurrency(totalReceived)}`} />
+        <StatTile label="Total financed" value={`Rs. ${formatCurrency(totalFinanced)}`} />
+        <StatTile label="Total received" value={`Rs. ${formatCurrency(totalReceived)}`} />
+        <StatTile
+          label="Cash received"
+          value={`Rs. ${formatCurrency(totalCashReceived)}`}
+        />
+        <StatTile
+          label="Bank transfer received"
+          value={`Rs. ${formatCurrency(totalBankTransferReceived)}`}
+        />
         <StatTile
           label="Overdue installments"
           value={String(overdueCount)}
@@ -121,27 +135,27 @@ async function DashboardContent() {
         />
         <StatTile
           label="Total profit (bikes)"
-          value={`Rs. ${formatCompactCurrency(totalBikeProfit)}`}
+          value={`Rs. ${formatCurrency(totalBikeProfit)}`}
           tone={totalBikeProfit < 0 ? "critical" : "default"}
         />
         <StatTile
           label="Business expenses"
-          value={`Rs. ${formatCompactCurrency(generalExpensesTotal)}`}
+          value={`Rs. ${formatCurrency(generalExpensesTotal)}`}
         />
         <StatTile
           label="Net profit"
-          value={`Rs. ${formatCompactCurrency(netProfit)}`}
+          value={`Rs. ${formatCurrency(netProfit)}`}
           tone={netProfit < 0 ? "critical" : "default"}
         />
         <StatTile
           label="Your investment"
-          value={`Rs. ${formatCompactCurrency(totalInvestment)}`}
+          value={`Rs. ${formatCurrency(totalInvestment)}`}
         />
         <StatTile
           label="Cash in hand"
-          value={`Rs. ${formatCompactCurrency(cashInHand)}`}
+          value={`Rs. ${formatCurrency(cashInHand)}`}
           tone={cashInHand < 0 ? "critical" : "default"}
-          hint="Investment + received − bike costs − expenses"
+          hint="Investment + cash received − bike costs − expenses (bank transfers not included)"
         />
       </div>
 

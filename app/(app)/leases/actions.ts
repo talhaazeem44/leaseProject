@@ -21,6 +21,7 @@ import {
   generateInstallmentSchedule,
   getMarkupRate,
   applyPayment,
+  recalcRemainingBalance,
 } from "@/lib/lease-calculations";
 import type { Lease } from "@/lib/models/lease";
 
@@ -291,6 +292,7 @@ export async function recordPayment(
       paymentDetails: parsed.paymentDetails,
       chequeNo: parsed.chequeNo,
       bankName: parsed.bankName,
+      paymentMethod: parsed.paymentMethod,
     },
     totalPayable
   );
@@ -298,6 +300,46 @@ export async function recordPayment(
   await collection.updateOne(
     { _id: new ObjectId(leaseId) },
     { $set: { installments: updatedInstallments, updatedAt: new Date() } }
+  );
+
+  refresh();
+}
+
+export async function undoPayment(leaseId: string, sr: number): Promise<void> {
+  if (sr === 0) throw new Error("The advance entry can't be undone here.");
+
+  const collection = await getLeasesCollection();
+  const lease = await collection.findOne({ _id: new ObjectId(leaseId) });
+  if (!lease) throw new Error("Lease not found");
+
+  const index = lease.installments.findIndex((i) => i.sr === sr);
+  if (index === -1) throw new Error("Installment not found");
+
+  const totalPayable = lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount;
+  const resetInstallments = lease.installments.map((inst, i) =>
+    i === index
+      ? {
+          ...inst,
+          receivedDate: null,
+          receivedAmount: null,
+          shortOver: null,
+          latePaymentCharges: 0,
+          paymentDetails: "",
+          chequeNo: "",
+          bankName: "",
+          paymentMethod: null,
+        }
+      : inst
+  );
+
+  await collection.updateOne(
+    { _id: new ObjectId(leaseId) },
+    {
+      $set: {
+        installments: recalcRemainingBalance(resetInstallments, totalPayable),
+        updatedAt: new Date(),
+      },
+    }
   );
 
   refresh();

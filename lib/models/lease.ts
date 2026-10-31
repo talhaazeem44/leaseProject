@@ -49,6 +49,8 @@ export interface Guarantor {
   businessContactNo?: string;
 }
 
+export type PaymentMethod = "cash" | "bank_transfer";
+
 export interface Installment {
   sr: number;
   installmentDate: Date;
@@ -61,6 +63,7 @@ export interface Installment {
   paymentDetails: string;
   chequeNo: string;
   bankName: string;
+  paymentMethod: PaymentMethod | null;
 }
 
 export interface CreditPlan {
