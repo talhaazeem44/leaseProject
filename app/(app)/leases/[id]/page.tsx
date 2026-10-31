@@ -9,7 +9,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { SectionHeader, InfoGrid, InfoField, Table, THead, Th, Td } from "@/components/Table";
 import { ActionForm } from "@/components/ActionForm";
 import { SubmitButton } from "@/components/SubmitButton";
-import { PaymentRow } from "./PaymentRow";
+import { PaymentRow, PaymentCard } from "./PaymentRow";
 import { addLeaseExpense, deleteLeaseExpense, deleteLease } from "../actions";
 import { CreatedToast } from "./CreatedToast";
 
@@ -184,7 +184,7 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
             >
               <SectionHeader>Guarantor {idx + 1}</SectionHeader>
               {g ? (
-                <InfoGrid>
+                <InfoGrid columns={2}>
                   <InfoField label="Name" value={g.name} />
                   <InfoField label="Father's Name" value={g.fatherName} />
                   <InfoField label="NIC #" value={g.nic} />
@@ -237,33 +237,46 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
 
       <div className="border border-gold rounded overflow-hidden">
         <SectionHeader>Installment Schedule</SectionHeader>
-        <Table>
-          <THead>
-            <Th>Sr</Th>
-            <Th>Installment Date</Th>
-            <Th>Scheduled Amount</Th>
-            <Th>Received Date</Th>
-            <Th>Received Amount</Th>
-            <Th>Short(-) / Over(+)</Th>
-            <Th>Remaining Balance</Th>
-            <Th>Late Charges</Th>
-            <Th>Payment Details</Th>
-            <Th>Cheque #</Th>
-            <Th>Bank</Th>
-            <Th>Action</Th>
-          </THead>
-          <tbody>
-            {installments.map((inst) => (
-              <PaymentRow key={inst.sr} leaseId={leaseId} installment={inst} />
-            ))}
-            <tr className="bg-offwhite-dim font-semibold">
-              <Td colSpan={4}>Total</Td>
-              <Td>Rs. {formatCurrency(totals.totalReceived)}</Td>
-              <Td>{formatCurrency(totals.totalShortOver)}</Td>
-              <Td colSpan={6} />
-            </tr>
-          </tbody>
-        </Table>
+
+        <div className="sm:hidden p-3 space-y-2 bg-offwhite-dim">
+          {installments.map((inst) => (
+            <PaymentCard key={inst.sr} leaseId={leaseId} installment={inst} />
+          ))}
+          <div className="border border-gold/40 rounded p-3 bg-white text-sm font-semibold flex justify-between">
+            <span>Total Received</span>
+            <span>Rs. {formatCurrency(totals.totalReceived)}</span>
+          </div>
+        </div>
+
+        <div className="hidden sm:block">
+          <Table>
+            <THead>
+              <Th>Sr</Th>
+              <Th>Installment Date</Th>
+              <Th>Scheduled Amount</Th>
+              <Th>Received Date</Th>
+              <Th>Received Amount</Th>
+              <Th>Short(-) / Over(+)</Th>
+              <Th>Remaining Balance</Th>
+              <Th>Late Charges</Th>
+              <Th>Payment Details</Th>
+              <Th>Cheque #</Th>
+              <Th>Bank</Th>
+              <Th>Action</Th>
+            </THead>
+            <tbody>
+              {installments.map((inst) => (
+                <PaymentRow key={inst.sr} leaseId={leaseId} installment={inst} />
+              ))}
+              <tr className="bg-offwhite-dim font-semibold">
+                <Td colSpan={4}>Total</Td>
+                <Td>Rs. {formatCurrency(totals.totalReceived)}</Td>
+                <Td>{formatCurrency(totals.totalShortOver)}</Td>
+                <Td colSpan={6} />
+              </tr>
+            </tbody>
+          </Table>
+        </div>
       </div>
 
       <div className="border border-gold rounded overflow-hidden">

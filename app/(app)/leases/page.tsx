@@ -71,48 +71,85 @@ async function LeasesContent({ searchParams }: Pick<PageProps<"/leases">, "searc
             : "No leases yet. Create your first one."}
         </p>
       ) : (
-        <div className="border border-gold rounded overflow-hidden">
-          <Table>
-            <THead>
-              <Th>File Ref</Th>
-              <Th>Customer</Th>
-              <Th>Mobile No</Th>
-              <Th>Bike Model</Th>
-              <Th>Chassis #</Th>
-              <Th>Tenure</Th>
-              <Th>Monthly Installment</Th>
-              <Th>Starting Month</Th>
-              <Th />
-            </THead>
-            <tbody>
-              {leases.map((lease) => {
-                const monthly =
-                  (lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount) /
-                  lease.creditPlan.numberOfInstallments;
-                return (
-                  <tr key={lease._id!.toString()}>
-                    <Td>{lease.creditPlan.fileRefNo || "—"}</Td>
-                    <Td>{lease.customer.name}</Td>
-                    <Td>{lease.customer.mobileNo}</Td>
-                    <Td>{lease.bike.model}</Td>
-                    <Td>{lease.bike.chassisNo}</Td>
-                    <Td>{lease.creditPlan.numberOfInstallments} mo</Td>
-                    <Td>Rs. {formatCurrency(monthly)}</Td>
-                    <Td>{formatDate(lease.creditPlan.startingMonth)}</Td>
-                    <Td>
-                      <Link
-                        href={`/leases/${lease._id!.toString()}`}
-                        className="text-gold-dark hover:underline"
-                      >
-                        View
-                      </Link>
-                    </Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
-        </div>
+        <>
+          <div className="sm:hidden space-y-2">
+            {leases.map((lease) => {
+              const monthly =
+                (lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount) /
+                lease.creditPlan.numberOfInstallments;
+              return (
+                <Link
+                  key={lease._id!.toString()}
+                  href={`/leases/${lease._id!.toString()}`}
+                  className="block border border-gold rounded p-3 bg-white text-sm space-y-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-neutral-900">{lease.customer.name}</span>
+                    <span className="text-gold-dark text-xs">View →</span>
+                  </div>
+                  <div className="text-neutral-600">
+                    {lease.bike.model} · {lease.bike.chassisNo}
+                  </div>
+                  <div className="text-neutral-600">{lease.customer.mobileNo}</div>
+                  <div className="text-neutral-600">
+                    {lease.creditPlan.numberOfInstallments} mo · Rs. {formatCurrency(monthly)}/mo
+                  </div>
+                  <div className="text-neutral-600">
+                    Starts {formatDate(lease.creditPlan.startingMonth)}
+                  </div>
+                  {lease.creditPlan.fileRefNo && (
+                    <div className="text-neutral-500 text-xs">
+                      File Ref: {lease.creditPlan.fileRefNo}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="hidden sm:block border border-gold rounded overflow-hidden">
+            <Table>
+              <THead>
+                <Th>File Ref</Th>
+                <Th>Customer</Th>
+                <Th>Mobile No</Th>
+                <Th>Bike Model</Th>
+                <Th>Chassis #</Th>
+                <Th>Tenure</Th>
+                <Th>Monthly Installment</Th>
+                <Th>Starting Month</Th>
+                <Th />
+              </THead>
+              <tbody>
+                {leases.map((lease) => {
+                  const monthly =
+                    (lease.creditPlan.creditAmount + lease.creditPlan.rentProfitAmount) /
+                    lease.creditPlan.numberOfInstallments;
+                  return (
+                    <tr key={lease._id!.toString()}>
+                      <Td>{lease.creditPlan.fileRefNo || "—"}</Td>
+                      <Td>{lease.customer.name}</Td>
+                      <Td>{lease.customer.mobileNo}</Td>
+                      <Td>{lease.bike.model}</Td>
+                      <Td>{lease.bike.chassisNo}</Td>
+                      <Td>{lease.creditPlan.numberOfInstallments} mo</Td>
+                      <Td>Rs. {formatCurrency(monthly)}</Td>
+                      <Td>{formatDate(lease.creditPlan.startingMonth)}</Td>
+                      <Td>
+                        <Link
+                          href={`/leases/${lease._id!.toString()}`}
+                          className="text-gold-dark hover:underline"
+                        >
+                          View
+                        </Link>
+                      </Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </div>
+        </>
       )}
     </>
   );

@@ -8,9 +8,16 @@ export function SectionHeader({ children }: { children: ReactNode }) {
   );
 }
 
-export function InfoGrid({ children }: { children: ReactNode }) {
+export function InfoGrid({
+  children,
+  columns = 3,
+}: {
+  children: ReactNode;
+  columns?: 2 | 3;
+}) {
+  const colsClass = columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3";
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 px-4 py-3 bg-offwhite-dim">
+    <div className={`grid grid-cols-1 ${colsClass} gap-x-6 gap-y-2 px-4 py-3 bg-offwhite-dim`}>
       {children}
     </div>
   );
@@ -18,9 +25,9 @@ export function InfoGrid({ children }: { children: ReactNode }) {
 
 export function InfoField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex gap-2 text-sm">
-      <span className="font-medium min-w-[9rem] text-neutral-600">{label}</span>
-      <span className="text-neutral-900">:&nbsp;{value ?? "—"}</span>
+    <div className="flex gap-2 text-sm min-w-0">
+      <span className="font-medium min-w-[9rem] shrink-0 text-neutral-600">{label}</span>
+      <span className="text-neutral-900 min-w-0 break-words">:&nbsp;{value ?? "—"}</span>
     </div>
   );
 }
