@@ -13,9 +13,9 @@ export default function MarkupRatesPage() {
       <div>
         <h1 className="text-xl font-bold">Markup Rate Settings</h1>
         <p className="text-sm text-neutral-500">
-          Configure the markup/profit percentage applied per tenure, and an optional discount
-          percentage knocked off that profit. New leases look up both for the chosen tenure at
-          creation time; existing leases keep the rate and discount they were created with.
+          Configure the markup/profit percentage applied per tenure. New leases look up the rate
+          for the chosen tenure at creation time; existing leases keep the rate they were created
+          with.
         </p>
       </div>
       <Suspense fallback={<p className="text-sm text-neutral-500">Loading rates…</p>}>
@@ -35,7 +35,6 @@ async function RatesTable() {
         <THead>
           <Th>Tenure (months)</Th>
           <Th>Rate (%)</Th>
-          <Th>Discount (%)</Th>
           <Th>Label</Th>
           <Th />
         </THead>
@@ -46,7 +45,7 @@ async function RatesTable() {
             const deleteAction = deleteMarkupRate.bind(null, id);
             return (
               <tr key={id}>
-                <Td colSpan={4}>
+                <Td colSpan={3}>
                   <ActionForm
                     action={updateAction}
                     successMessage="Rate updated"
@@ -65,15 +64,6 @@ async function RatesTable() {
                       step="0.01"
                       defaultValue={rate.ratePercent}
                       required
-                      className={inputClass}
-                    />
-                    <input
-                      name="discountPercent"
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      max={100}
-                      defaultValue={rate.discountPercent ?? 0}
                       className={inputClass}
                     />
                     <input
@@ -102,7 +92,7 @@ async function RatesTable() {
             );
           })}
           <tr className="bg-offwhite-dim">
-            <Td colSpan={5}>
+            <Td colSpan={4}>
               <ActionForm
                 action={createMarkupRate}
                 successMessage="Rate added"
@@ -121,15 +111,6 @@ async function RatesTable() {
                   step="0.01"
                   placeholder="Rate %"
                   required
-                  className={inputClass}
-                />
-                <input
-                  name="discountPercent"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  max={100}
-                  placeholder="Discount %"
                   className={inputClass}
                 />
                 <input

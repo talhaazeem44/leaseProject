@@ -66,6 +66,7 @@ export const creditPlanInputSchema = z.object({
   documentCharges: z.coerce.number().nonnegative().default(0),
   retailPrice: z.coerce.number().positive("Must be greater than 0"),
   advance: z.coerce.number().nonnegative(),
+  discountPercent: z.coerce.number().min(0).max(100).optional().default(0),
 });
 
 export const leaseFormSchema = z.object({

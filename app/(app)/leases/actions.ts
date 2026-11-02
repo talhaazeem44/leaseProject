@@ -98,14 +98,14 @@ export async function createLease(
   const parsed = parseResult.data;
 
   const markupRates = await (await getMarkupRatesCollection()).find().toArray();
-  const rate = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
+  const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
 
   const creditAmount = computeCreditAmount(
     parsed.creditPlan.retailPrice,
     parsed.creditPlan.advance
   );
-  const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
-  const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+  const grossProfitAmount = computeProfitAmount(creditAmount, ratePercent);
+  const discountAmount = computeDiscountAmount(grossProfitAmount, parsed.creditPlan.discountPercent);
   const profitAmount = round2(grossProfitAmount - discountAmount);
   const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
   const installments = generateInstallmentSchedule({
@@ -135,8 +135,8 @@ export async function createLease(
       retailPrice: parsed.creditPlan.retailPrice,
       rentCreditPrice,
       advance: parsed.creditPlan.advance,
-      rentProfitRatePercent: rate.ratePercent,
-      discountPercent: rate.discountPercent,
+      rentProfitRatePercent: ratePercent,
+      discountPercent: parsed.creditPlan.discountPercent,
       discountAmount,
       rentProfitAmount: profitAmount,
       creditAmount,
@@ -177,27 +177,31 @@ export async function updateLease(
     parsed.creditPlan.retailPrice !== existing.creditPlan.retailPrice ||
     parsed.creditPlan.advance !== existing.creditPlan.advance ||
     parsed.creditPlan.numberOfInstallments !== existing.creditPlan.numberOfInstallments ||
+    parsed.creditPlan.discountPercent !== existing.creditPlan.discountPercent ||
     parsed.creditPlan.startingMonth.getTime() !== existing.creditPlan.startingMonth.getTime();
 
   if (hasRecordedPayments && creditPlanChanged) {
     return {
       error:
-        "This lease already has recorded payments, so Retail Price, Advance, Tenure, and " +
-        "Starting Month can't be changed. Correct other details, or delete the recorded " +
-        "payments first if the credit terms genuinely need to change.",
+        "This lease already has recorded payments, so Retail Price, Advance, Tenure, " +
+        "Discount, and Starting Month can't be changed. Correct other details, or delete " +
+        "the recorded payments first if the credit terms genuinely need to change.",
     };
   }
 
   let { installments, creditPlan } = existing;
   if (!hasRecordedPayments) {
     const markupRates = await (await getMarkupRatesCollection()).find().toArray();
-    const rate = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
+    const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
     const creditAmount = computeCreditAmount(
       parsed.creditPlan.retailPrice,
       parsed.creditPlan.advance
     );
-    const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
-    const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+    const grossProfitAmount = computeProfitAmount(creditAmount, ratePercent);
+    const discountAmount = computeDiscountAmount(
+      grossProfitAmount,
+      parsed.creditPlan.discountPercent
+    );
     const profitAmount = round2(grossProfitAmount - discountAmount);
     const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
     installments = generateInstallmentSchedule({
@@ -217,8 +221,8 @@ export async function updateLease(
       retailPrice: parsed.creditPlan.retailPrice,
       rentCreditPrice,
       advance: parsed.creditPlan.advance,
-      rentProfitRatePercent: rate.ratePercent,
-      discountPercent: rate.discountPercent,
+      rentProfitRatePercent: ratePercent,
+      discountPercent: parsed.creditPlan.discountPercent,
       discountAmount,
       rentProfitAmount: profitAmount,
       creditAmount,

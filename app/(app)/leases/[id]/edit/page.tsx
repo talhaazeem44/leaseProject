@@ -54,11 +54,7 @@ async function EditLeaseFormLoader({ params }: Pick<PageProps<"/leases/[id]/edit
 
   return (
     <LeaseForm
-      rates={rates.map((r) => ({
-        tenureMonths: r.tenureMonths,
-        ratePercent: r.ratePercent,
-        discountPercent: r.discountPercent,
-      }))}
+      rates={rates.map((r) => ({ tenureMonths: r.tenureMonths, ratePercent: r.ratePercent }))}
       editing={{
         leaseId: lease._id!.toString(),
         bike: lease.bike,

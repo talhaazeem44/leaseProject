@@ -13,17 +13,12 @@ export function round2(n: number): number {
 export interface MarkupRateLookup {
   tenureMonths: number;
   ratePercent: number;
-  discountPercent?: number;
 }
 
-/** Rates created before the discount field existed are treated as 0% discount. */
-export function getMarkupRate(
-  rates: MarkupRateLookup[],
-  tenureMonths: number
-): { ratePercent: number; discountPercent: number } {
+export function getMarkupRate(rates: MarkupRateLookup[], tenureMonths: number): number {
   const match = rates.find((r) => r.tenureMonths === tenureMonths);
   if (!match) throw new Error(`No markup rate configured for ${tenureMonths} months`);
-  return { ratePercent: match.ratePercent, discountPercent: match.discountPercent ?? 0 };
+  return match.ratePercent;
 }
 
 export function computeCreditAmount(retailPrice: number, advance: number): number {

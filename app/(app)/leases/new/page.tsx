@@ -40,11 +40,7 @@ async function NewLeaseFormLoader() {
 
   return (
     <LeaseForm
-      rates={rates.map((r) => ({
-        tenureMonths: r.tenureMonths,
-        ratePercent: r.ratePercent,
-        discountPercent: r.discountPercent,
-      }))}
+      rates={rates.map((r) => ({ tenureMonths: r.tenureMonths, ratePercent: r.ratePercent }))}
     />
   );
 }

@@ -20,7 +20,6 @@ import type { Bike, Customer, Guarantor, CreditPlan } from "@/lib/models/lease";
 interface RateOption {
   tenureMonths: number;
   ratePercent: number;
-  discountPercent?: number;
 }
 
 export interface EditingLease {
@@ -152,6 +151,9 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
   const [retailPrice, setRetailPrice] = useState<number>(editing?.creditPlan.retailPrice ?? 0);
   const [costPrice, setCostPrice] = useState<number>(editing?.bike.costPrice ?? 0);
   const [advance, setAdvance] = useState<number>(editing?.creditPlan.advance ?? 0);
+  const [discountPercent, setDiscountPercent] = useState<number>(
+    editing?.creditPlan.discountPercent ?? 0
+  );
   const [tenureMonths, setTenureMonths] = useState<number>(
     editing?.creditPlan.numberOfInstallments ?? rates[0]?.tenureMonths ?? 0
   );
@@ -169,10 +171,10 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
   const preview = useMemo(() => {
     if (!tenureMonths || retailPrice <= 0) return null;
     try {
-      const rate = getMarkupRate(rates, tenureMonths);
+      const ratePercent = getMarkupRate(rates, tenureMonths);
       const creditAmount = computeCreditAmount(retailPrice, advance);
-      const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
-      const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+      const grossProfitAmount = computeProfitAmount(creditAmount, ratePercent);
+      const discountAmount = computeDiscountAmount(grossProfitAmount, discountPercent);
       const profitAmount = round2(grossProfitAmount - discountAmount);
       const monthlyInstallment = computeMonthlyInstallmentBase(
         creditAmount,
@@ -182,8 +184,7 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
       const rentCreditPrice = computeRentCreditPrice(retailPrice, profitAmount);
       const profit = computeLeaseProfit({ rentCreditPrice, costPrice, expensesTotal: 0 });
       return {
-        ratePercent: rate.ratePercent,
-        discountPercent: rate.discountPercent,
+        ratePercent,
         discountAmount,
         creditAmount,
         profitAmount,
@@ -194,7 +195,7 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
     } catch {
       return null;
     }
-  }, [rates, tenureMonths, retailPrice, advance, costPrice]);
+  }, [rates, tenureMonths, retailPrice, advance, discountPercent, costPrice]);
 
   const creditPlanLocked = editing?.hasRecordedPayments ?? false;
   const guarantor1 = editing?.guarantors[0];
@@ -472,8 +473,8 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
         </legend>
         {creditPlanLocked && (
           <p className="mx-4 mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            This lease already has recorded payments, so Retail Price, Advance, Tenure, and
-            Starting Month are locked to keep the installment schedule consistent.
+            This lease already has recorded payments, so Retail Price, Advance, Tenure,
+            Discount, and Starting Month are locked to keep the installment schedule consistent.
           </p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -509,8 +510,7 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
             >
               {rates.map((r) => (
                 <option key={r.tenureMonths} value={r.tenureMonths}>
-                  {r.tenureMonths} months ({r.ratePercent}%
-                  {r.discountPercent ? `, ${r.discountPercent}% discount` : ""})
+                  {r.tenureMonths} months ({r.ratePercent}%)
                 </option>
               ))}
             </select>
@@ -555,6 +555,23 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
               onChange={(e) => setAdvance(Number(e.target.value))}
             />
           </div>
+          <div>
+            <label className={labelClass}>Discount (%)</label>
+            <input
+              name="creditPlan.discountPercent"
+              type="number"
+              step="0.01"
+              min={0}
+              max={100}
+              readOnly={creditPlanLocked}
+              className={creditPlanLocked ? lockedInputClass : inputClass}
+              value={discountPercent || ""}
+              onChange={(e) => setDiscountPercent(Number(e.target.value))}
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              Taken off the Rent/Profit Amount, not the retail price.
+            </p>
+          </div>
         </div>
 
         {preview && (
@@ -570,7 +587,7 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
             <div>
               <div className="text-xs text-neutral-500">Discount</div>
               <div className="font-semibold">
-                {preview.discountPercent}%
+                {discountPercent}%
                 {preview.discountAmount > 0 && (
                   <span className="font-normal text-neutral-500">
                     {" "}
