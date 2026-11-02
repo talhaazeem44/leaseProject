@@ -227,6 +227,11 @@ async function LeaseDetail({ params }: Pick<PageProps<"/leases/[id]">, "params">
             value={`Rs. ${formatCurrency(creditPlan.documentCharges)}`}
           />
           <InfoField label="Rent / Profit Rate" value={`${creditPlan.rentProfitRatePercent}%`} />
+          <InfoField label="Discount Rate" value={`${creditPlan.discountPercent ?? 0}%`} />
+          <InfoField
+            label="Discount Amount"
+            value={`Rs. ${formatCurrency(creditPlan.discountAmount ?? 0)}`}
+          />
           <InfoField
             label="Rent / Profit Amount"
             value={`Rs. ${formatCurrency(creditPlan.rentProfitAmount)}`}

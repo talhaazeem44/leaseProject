@@ -77,6 +77,10 @@ export interface CreditPlan {
   rentCreditPrice: number;
   advance: number;
   rentProfitRatePercent: number;
+  /** Percentage of the gross profit amount waived as a discount, looked up from the markup rate at creation time. */
+  discountPercent: number;
+  /** Rupee value of the discount; rentProfitAmount below is already net of this. */
+  discountAmount: number;
   rentProfitAmount: number;
   creditAmount: number;
 }

@@ -6,10 +6,12 @@ import { toast } from "sonner";
 import {
   computeCreditAmount,
   computeProfitAmount,
+  computeDiscountAmount,
   computeMonthlyInstallmentBase,
   computeRentCreditPrice,
   computeLeaseProfit,
   getMarkupRate,
+  round2,
 } from "@/lib/lease-calculations";
 import { formatCurrency, formatDateInput } from "@/lib/format";
 import { createLease, updateLease, type LeaseFormState } from "../actions";
@@ -18,6 +20,7 @@ import type { Bike, Customer, Guarantor, CreditPlan } from "@/lib/models/lease";
 interface RateOption {
   tenureMonths: number;
   ratePercent: number;
+  discountPercent?: number;
 }
 
 export interface EditingLease {
@@ -166,9 +169,11 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
   const preview = useMemo(() => {
     if (!tenureMonths || retailPrice <= 0) return null;
     try {
-      const ratePercent = getMarkupRate(rates, tenureMonths);
+      const rate = getMarkupRate(rates, tenureMonths);
       const creditAmount = computeCreditAmount(retailPrice, advance);
-      const profitAmount = computeProfitAmount(creditAmount, ratePercent);
+      const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
+      const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+      const profitAmount = round2(grossProfitAmount - discountAmount);
       const monthlyInstallment = computeMonthlyInstallmentBase(
         creditAmount,
         profitAmount,
@@ -177,7 +182,9 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
       const rentCreditPrice = computeRentCreditPrice(retailPrice, profitAmount);
       const profit = computeLeaseProfit({ rentCreditPrice, costPrice, expensesTotal: 0 });
       return {
-        ratePercent,
+        ratePercent: rate.ratePercent,
+        discountPercent: rate.discountPercent,
+        discountAmount,
         creditAmount,
         profitAmount,
         monthlyInstallment,
@@ -502,7 +509,8 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
             >
               {rates.map((r) => (
                 <option key={r.tenureMonths} value={r.tenureMonths}>
-                  {r.tenureMonths} months ({r.ratePercent}%)
+                  {r.tenureMonths} months ({r.ratePercent}%
+                  {r.discountPercent ? `, ${r.discountPercent}% discount` : ""})
                 </option>
               ))}
             </select>
@@ -550,7 +558,7 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
         </div>
 
         {preview && (
-          <div className="mx-4 mb-4 p-3 bg-offwhite-dim border border-dashed border-gold/50 rounded text-sm grid grid-cols-2 sm:grid-cols-6 gap-3">
+          <div className="mx-4 mb-4 p-3 bg-offwhite-dim border border-dashed border-gold/50 rounded text-sm grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <div className="text-xs text-neutral-500">Credit Amount</div>
               <div className="font-semibold">Rs. {formatCurrency(preview.creditAmount)}</div>
@@ -558,6 +566,18 @@ export function LeaseForm({ rates, editing }: { rates: RateOption[]; editing?: E
             <div>
               <div className="text-xs text-neutral-500">Rent/Profit Rate</div>
               <div className="font-semibold">{preview.ratePercent}%</div>
+            </div>
+            <div>
+              <div className="text-xs text-neutral-500">Discount</div>
+              <div className="font-semibold">
+                {preview.discountPercent}%
+                {preview.discountAmount > 0 && (
+                  <span className="font-normal text-neutral-500">
+                    {" "}
+                    (-Rs. {formatCurrency(preview.discountAmount)})
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <div className="text-xs text-neutral-500">Rent/Profit Amount</div>

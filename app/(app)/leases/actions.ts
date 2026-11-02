@@ -17,11 +17,13 @@ import { saveCustomerPhoto } from "@/lib/upload";
 import {
   computeCreditAmount,
   computeProfitAmount,
+  computeDiscountAmount,
   computeRentCreditPrice,
   generateInstallmentSchedule,
   getMarkupRate,
   applyPayment,
   recalcRemainingBalance,
+  round2,
 } from "@/lib/lease-calculations";
 import type { Lease } from "@/lib/models/lease";
 
@@ -96,13 +98,15 @@ export async function createLease(
   const parsed = parseResult.data;
 
   const markupRates = await (await getMarkupRatesCollection()).find().toArray();
-  const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
+  const rate = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
 
   const creditAmount = computeCreditAmount(
     parsed.creditPlan.retailPrice,
     parsed.creditPlan.advance
   );
-  const profitAmount = computeProfitAmount(creditAmount, ratePercent);
+  const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
+  const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+  const profitAmount = round2(grossProfitAmount - discountAmount);
   const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
   const installments = generateInstallmentSchedule({
     startingMonth: parsed.creditPlan.startingMonth,
@@ -131,7 +135,9 @@ export async function createLease(
       retailPrice: parsed.creditPlan.retailPrice,
       rentCreditPrice,
       advance: parsed.creditPlan.advance,
-      rentProfitRatePercent: ratePercent,
+      rentProfitRatePercent: rate.ratePercent,
+      discountPercent: rate.discountPercent,
+      discountAmount,
       rentProfitAmount: profitAmount,
       creditAmount,
     },
@@ -185,12 +191,14 @@ export async function updateLease(
   let { installments, creditPlan } = existing;
   if (!hasRecordedPayments) {
     const markupRates = await (await getMarkupRatesCollection()).find().toArray();
-    const ratePercent = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
+    const rate = getMarkupRate(markupRates, parsed.creditPlan.numberOfInstallments);
     const creditAmount = computeCreditAmount(
       parsed.creditPlan.retailPrice,
       parsed.creditPlan.advance
     );
-    const profitAmount = computeProfitAmount(creditAmount, ratePercent);
+    const grossProfitAmount = computeProfitAmount(creditAmount, rate.ratePercent);
+    const discountAmount = computeDiscountAmount(grossProfitAmount, rate.discountPercent);
+    const profitAmount = round2(grossProfitAmount - discountAmount);
     const rentCreditPrice = computeRentCreditPrice(parsed.creditPlan.retailPrice, profitAmount);
     installments = generateInstallmentSchedule({
       startingMonth: parsed.creditPlan.startingMonth,
@@ -209,7 +217,9 @@ export async function updateLease(
       retailPrice: parsed.creditPlan.retailPrice,
       rentCreditPrice,
       advance: parsed.creditPlan.advance,
-      rentProfitRatePercent: ratePercent,
+      rentProfitRatePercent: rate.ratePercent,
+      discountPercent: rate.discountPercent,
+      discountAmount,
       rentProfitAmount: profitAmount,
       creditAmount,
     };
