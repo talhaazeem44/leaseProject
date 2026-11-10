@@ -13,6 +13,7 @@ import {
   computeLeaseProfit,
   computeCashInHand,
   computeMethodTotals,
+  computeDueThisMonth,
 } from "@/lib/lease-calculations";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { StatTile } from "@/components/StatTile";
@@ -42,6 +43,7 @@ async function DashboardContent() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
   let activeLeases = 0;
   let completedLeases = 0;
@@ -52,6 +54,7 @@ async function DashboardContent() {
   let totalBankTransferReceived = 0;
   let overdueCount = 0;
   let upcomingCount = 0;
+  let dueThisMonth = 0;
   let totalBikeProfit = 0;
   let totalCostPrice = 0;
   let totalLeaseExpenses = 0;
@@ -80,6 +83,8 @@ async function DashboardContent() {
       costPrice,
       expensesTotal: leaseExpensesTotal,
     });
+
+    dueThisMonth += computeDueThisMonth(lease.installments, startOfMonth, startOfNextMonth);
 
     for (const inst of lease.installments) {
       const bucket = classifyInstallment(inst.installmentDate, inst.receivedAmount, today);
@@ -132,6 +137,11 @@ async function DashboardContent() {
           label="Due in 30 days"
           value={String(upcomingCount)}
           tone={upcomingCount > 0 ? "warning" : "default"}
+        />
+        <StatTile
+          label="Due this month"
+          value={`Rs. ${formatCurrency(dueThisMonth)}`}
+          hint="Unpaid installments scheduled this month — drops as you record payments"
         />
         <StatTile
           label="Total profit (bikes)"

@@ -178,6 +178,25 @@ export function computeMethodTotals(installments: Installment[]) {
   return { cashReceived: round2(cashReceived), bankTransferReceived: round2(bankTransferReceived) };
 }
 
+/**
+ * Total still owed for installments scheduled within [monthStart, monthEnd) that
+ * haven't been paid yet. Falls as each matching installment gets recorded, since
+ * paid ones (receivedAmount !== null) are excluded.
+ */
+export function computeDueThisMonth(
+  installments: Installment[],
+  monthStart: Date,
+  monthEnd: Date
+): number {
+  const total = installments.reduce((sum, inst) => {
+    if (inst.receivedAmount !== null) return sum;
+    const date = new Date(inst.installmentDate);
+    if (date < monthStart || date >= monthEnd) return sum;
+    return sum + inst.scheduledAmount;
+  }, 0);
+  return round2(total);
+}
+
 export function computeExpensesTotal(expenses: { amount: number }[]): number {
   return round2(expenses.reduce((sum, e) => sum + e.amount, 0));
 }
