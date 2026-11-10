@@ -54,6 +54,7 @@ async function DashboardContent() {
   let totalBankTransferReceived = 0;
   let overdueCount = 0;
   let upcomingCount = 0;
+  let upcomingTotal = 0;
   let dueThisMonth = 0;
   let totalBikeProfit = 0;
   let totalCostPrice = 0;
@@ -89,7 +90,10 @@ async function DashboardContent() {
     for (const inst of lease.installments) {
       const bucket = classifyInstallment(inst.installmentDate, inst.receivedAmount, today);
       if (bucket === "overdue") overdueCount++;
-      if (bucket === "upcoming") upcomingCount++;
+      if (bucket === "upcoming") {
+        upcomingCount++;
+        upcomingTotal += inst.scheduledAmount;
+      }
     }
 
     modelCounts.set(lease.bike.model, (modelCounts.get(lease.bike.model) ?? 0) + 1);
@@ -137,6 +141,12 @@ async function DashboardContent() {
           label="Due in 30 days"
           value={String(upcomingCount)}
           tone={upcomingCount > 0 ? "warning" : "default"}
+        />
+        <StatTile
+          label="Upcoming (30 days) total"
+          value={`Rs. ${formatCurrency(upcomingTotal)}`}
+          tone={upcomingTotal > 0 ? "warning" : "default"}
+          hint="Unpaid installments due in the next 30 days — drops as you record payments"
         />
         <StatTile
           label="Due this month"
